@@ -19,8 +19,20 @@ Piggybank requires JQuery v2.0.3
 
 Calls will then be made in the order "/this", then "/that", then "/theother".
 
-Piggybank will then collate results from all calls, returing only when all have completed. Results passed as results object to the passed in resultWriter function with integer keys denoted the results of each call.
+Piggybank will then collate results from all calls, returing only when all have completed.  
+
+Results passed as results object to the resultWriter function with integer keys denoting the results of each call.
 
 e.g. obj[0] is result of first call, obj[1] result of second etc.
+
+Each result object contains the http response code status (obj.status) and the textual equivilent (obj.text).
+
+e.g.
+
+    {
+        "0":{"status":200,"text":"OK"},
+        "1":{"status":200,"text":"OK"},
+        "2":{"status":404,"text":"Not Found"}
+    }
 
 There's a resultWriter call available as part of the Piggybank instance (in the example above) which just passes the results to the browser console.
