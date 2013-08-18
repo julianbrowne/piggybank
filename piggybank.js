@@ -46,7 +46,7 @@ function Piggybank() {
 
     this.postResult = function(result, index) {
             console.log('checking call');
-            callManager.results[index] = xhr.status;
+            callManager.results[index] = result.status;
             console.log("queue: " + callManager.queue.length + " results: " + Object.keys(callManager.results).length);
             if(callManager.queue.length === Object.keys(callManager.results).length) {
                 console.log("All calls finished. Returning results.");
