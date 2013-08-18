@@ -30,9 +30,26 @@ Each result object contains the http response code status (obj.status) and the t
 e.g.
 
     {
-        "0":{"status":200,"text":"OK"},
-        "1":{"status":200,"text":"OK"},
-        "2":{"status":404,"text":"Not Found"}
+        "0": {
+            "url":"test.html",
+            "method":"get",
+            "status":200,
+            "text":"OK"
+        },
+
+        "1": {
+            "url":"index.html",
+            "method":"post",
+            "status":200,
+            "text":"OK"
+        },
+
+        "2": {
+            "url":"not-there.html",
+            "method":"put",
+            "status":404,
+            "text":"Not Found"
+        }
     }
 
 There's a resultWriter call available as part of the Piggybank instance (in the example above) which just passes the results to the browser console.

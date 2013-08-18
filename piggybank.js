@@ -47,7 +47,12 @@ function Piggybank() {
     **/
 
     this.postResult = function(result, index) { 
-            callManager.results[index] = { status: result.status, text: result.statusText };
+            callManager.results[index] = { 
+                url: callManager.queue[index].url,
+                method: callManager.queue[index].method,
+                status: result.status, 
+                text: result.statusText
+            };
             if(callManager.queue.length === Object.keys(callManager.results).length) {
                 callManager.deferred.resolve(callManager.results);
             }
