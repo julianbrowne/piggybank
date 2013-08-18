@@ -8,6 +8,7 @@ function Piggybank() {
     this.queue = [];
     this.results = {};
     this.deferred = null;
+    this.timeout = 10000;
 
     this.addCall = function(url, method) { 
         var method = method === undefined ? 'get' : method;
@@ -21,7 +22,8 @@ function Piggybank() {
             var call = $.ajax(
                 { 
                     url: api.url,
-                    type: api.method
+                    type: api.method,
+                    timeout: callManager.timeout
                 });
             call
                 .done(callManager.callPassed(api.url, api.id))

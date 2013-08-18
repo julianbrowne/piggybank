@@ -11,6 +11,8 @@ Piggybank requires JQuery v2.0.3
 
     var manager = new Piggybank();
 
+    manager.timeout = 1000;                 // ms timeout. Default is 10000 (10 secs)
+
     manager.addCall("/this");               // "get" by default
     manager.addCall("/that", "post");       // or "post"
     manager.addCall("/theother", "put");
