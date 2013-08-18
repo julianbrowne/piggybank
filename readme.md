@@ -11,9 +11,9 @@ Piggybank requires JQuery v2.0.3
 
     var manager = new Piggybank();
 
-    manager.addCall("/this");
-    manager.addCall("/that");
-    manager.addCall("/theother");
+    manager.addCall("/this");               // "get" by default
+    manager.addCall("/that", "post");       // or "post"
+    manager.addCall("/theother", "put");
 
     manager.makeCalls().done(manager.resultWriter);
 

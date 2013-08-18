@@ -9,10 +9,10 @@ function Piggybank() {
     this.results = {};
     this.deferred = null;
 
-    this.addCall = function(url) {
-        console.log('adding call ' + url);
+    this.addCall = function(url, method) {
+        var method = method === undefined ? 'get' : method;
         var index = this.queue.length;
-        this.queue.push({ url: url, id: index });
+        this.queue.push({ url: url, id: index, method: method });
     };
 
     this.makeCalls = function() {
@@ -20,7 +20,11 @@ function Piggybank() {
         callManager.deferred = $.Deferred();
         this.queue.forEach(function(api) { 
             console.log("about to make api call to " + api.url);
-            var call = $.get(api.url);
+            var call = $.ajax(
+                {
+                    url: api.url,
+                    type: api.method
+                });
             call
                 .done(callManager.callPassed(api.url, api.id))
                 .fail(callManager.callFailed(api.url, api.id));
