@@ -11,6 +11,7 @@ function Piggybank(root) {
     this.timeout = 10000;
     this.root = root;
     this.last = null;
+    this.ignore404 = false;
 
     this.addCall = function(url, method) { 
         var method = method === undefined ? 'get' : method;
@@ -79,8 +80,15 @@ function Piggybank(root) {
                             next.resolve();
                         },
                         function(jqXHR, textStatus, errorThrown) { 
-                            callManager.postResult(jqXHR, index);
-                            callManager.deferred.resolve(callManager.results);
+                            if(callManager.ignore404) {
+                                next = $.Deferred();
+                                callManager.builder(++index, next, jqXHR);
+                                next.resolve();
+                            }
+                            else {
+                                callManager.postResult(jqXHR, index);
+                                callManager.deferred.resolve(callManager.results);
+                            }
                         }
                     )
                 }

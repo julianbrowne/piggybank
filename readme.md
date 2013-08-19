@@ -62,7 +62,7 @@ There's a resultWriter call available as part of the Piggybank instance (in the 
 
 ### Example (Sync)
 
-Piggybank does not use the JQuery async false option for making ajax requests, but rather constructs a chain of calls using JQuery's Defferred/then/done. Whereas in async mode all calls are made regardless of failure, in sync mode once a call fails the others will not fire.
+Piggybank does not use the JQuery async false option for making ajax requests, but rather constructs a chain of calls using JQuery's Deferred/then/done. Whereas in async mode all calls are made regardless of failure, in sync mode once a call fails the others will not fire.
 
 The set up is identical to async mode but with a different call to kick start execution:
 
@@ -73,5 +73,11 @@ The set up is identical to async mode but with a different call to kick start ex
     manager.addCall("/theother", "put");
 
     manager.makeCallsSynchronously().done(result_writer_callback_here);
+
+A 404 in ajax terms is considered an error. To ignore a 404 response and continue to the next API in sync mode simply set:
+
+    manager.ignore404 = true;
+
+
 
 
