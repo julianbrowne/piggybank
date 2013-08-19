@@ -7,8 +7,8 @@ Piggybank can manage both async and sync (wait for last to complete before next 
 
 ### Requirements
 
-Piggybank requires JQuery v2.0.3
-Tested on Chrome V28 but should work in most browsers
+Piggybank requires JQuery v2.0.3   
+Tested on Chrome V28 but should work in most browsers   
 
 ### Example (Async)
 
