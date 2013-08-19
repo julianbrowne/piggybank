@@ -8,18 +8,30 @@ Piggybank can manage both async and sync (wait for last to complete before next 
 ### Requirements
 
 Piggybank requires JQuery v2.0.3
+Tested on Chrome V28 but should work in most browsers
 
 ### Example (Async)
 
-    var manager = new Piggybank("http://127.0.0.1");
+    ...
 
-    manager.timeout = 1000;                 // ms timeout. Default is 10000 (10 secs)
+    <script src="jquery-2.0.3.js"></script>
+    <script src="piggybank.js"></script>
 
-    manager.addCall("/this");               // "get" by default
-    manager.addCall("/that", "post");       // or "post"
-    manager.addCall("/theother", "put");
+    ...
 
-    manager.makeCalls().done(manager.resultWriter);
+    <script>
+
+        var manager = new Piggybank("http://127.0.0.1");
+
+        manager.timeout = 1000;                 // ms timeout. Default is 10000 (10 secs)
+
+        manager.addCall("/this");               // "get" by default
+        manager.addCall("/that", "post");       // or "post"
+        manager.addCall("/theother", "put");
+
+        manager.makeCalls().done(manager.resultWriter);
+
+    </script>
 
 Piggybank is instantiated with the root server calls are to be made to. Beware of Same Origin Policy if calling to a host/port combo that's different from the one Piggbank is running on. There's no [JSONP](http://en.wikipedia.org/wiki/JSONP) support in Piggybank yet. Cross domain calls will work through Piggybank/JQuery as long as the remote host is set up to suport [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
 
@@ -77,7 +89,5 @@ The set up is identical to async mode but with a different call to kick start ex
 A 404 in ajax terms is considered an error. To ignore a 404 response and continue to the next API in sync mode simply set:
 
     manager.ignore404 = true;
-
-
 
 
