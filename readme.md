@@ -106,8 +106,13 @@ The set up is identical to async mode but with a different call to kick start ex
 
     manager.makeCallsSynchronously().done(result_writer_callback_here);
 
-A 404 in ajax terms is considered an error. To ignore a 404 response and continue to the next API in sync mode simply set:
+#### Error Handling
+
+A 404 in JQuery ajax terms is considered an error. To ignore a 404 response and continue to the next API in sync mode simply set:
 
     manager.ignore404 = true;
 
+Or to ignore all errors (5xx etc):
+
+    manager.ignoreErrors = true;
 

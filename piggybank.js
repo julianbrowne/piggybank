@@ -81,10 +81,11 @@ function Piggybank(root) {
                             next.resolve();
                         },
                         function(jqXHR, textStatus, errorThrown) { 
-                            if(callManager.ignore404) {
-                                next = $.Deferred();
-                                callManager.builder(++index, next, jqXHR);
-                                next.resolve();
+                            if(    (jqXHR.status === 404 && callManager.ignore404)
+                                || (callManager.ignoreErrors === true) ) {
+                                    next = $.Deferred();
+                                    callManager.builder(++index, next, jqXHR);
+                                    next.resolve();
                             }
                             else {
                                 callManager.postResult(jqXHR, callManager.queue[index].data);
