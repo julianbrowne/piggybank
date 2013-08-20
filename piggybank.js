@@ -117,13 +117,20 @@ function Piggybank(root) {
     **/
 
     this.postResult = function(result, callData) { 
-        console.log(callData);
         callManager.results[callData.id] = { 
-            url: callManager.queue[callData.id].url,
-            data: callManager.queue[callData.id].data,
+            url:    callManager.queue[callData.id].url,
+            data:   callData,
             status: result.status, 
-            text: result.statusText
+            text:   result.statusText
         };
+        if(callData.expect !== undefined) { 
+            if(result.status === callData.expect) { 
+                callManager.results[callData.id].data.expected = true;
+            }
+            else {
+                callManager.results[callData.id].data.expected = false;
+            }
+        }
     };
 
     /**

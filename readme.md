@@ -41,6 +41,10 @@ Any keys passed as the second argument object will come back in the results list
 
     manager.addCall("/that", { method: "post", name: "posting some data to /that" });
 
+If the data object contains a key called "expect" then this will be compared with the actual HTTP response code recieved and a key added to the results called "expected" with a true or false value depending on whether the return code matched that expected.
+
+    manager.addCall("/that", { method: "post", name: "update that", expect: 204 });
+
 #### Call Order
 
 Calls will be made in the order "/this", then "/that", then "/theother". Piggybank will then collate results from all calls, returing only when all have completed or timed out.
@@ -53,7 +57,7 @@ e.g.
 
     {
         "0": {
-            "url":"test.html",
+            "url":"/this",
             "data" : {
                 "method":"get",
                 "id":"0"
@@ -63,17 +67,20 @@ e.g.
         },
 
         "1": {
-            "url":"index.html",
+            "url":"/that",
             "data" : {
                 "method":"post",
-                "id":"1"
+                "id":"1",
+                "name":"update that",
+                "expect":"204",
+                "expected":"true"
             },
-            "status":200,
+            "status":204,
             "text":"OK"
         },
 
         "2": {
-            "url":"not-there.html",
+            "url":"theother",
             "data" : {
                 "method":"put",
                 "id":"2"
@@ -87,7 +94,7 @@ There's a resultWriter call available as part of the Piggybank instance (in the 
 
 ### Example (Sync)
 
-Piggybank does not use the JQuery async false option for making ajax requests, but rather constructs a chain of calls using JQuery's Deferred/then/done. Whereas in async mode all calls are made regardless of failure, in sync mode once a call fails the others will not fire.
+Piggybank does not use the [deprecated](http://api.jquery.com/jQuery.ajax/#jQuery-ajax-settings) JQuery { async: false } option for making ajax requests, but rather constructs a chain of calls using JQuery's [Deferred](http://api.jquery.com/category/deferred-object/) object. Whereas in async mode all calls are made regardless of failure, in sync mode once a call fails the others will not fire.
 
 The set up is identical to async mode but with a different call to kick start execution:
 
