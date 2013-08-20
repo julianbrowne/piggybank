@@ -47,7 +47,7 @@ If the data object contains a key called "expect" then this will be compared wit
     
 Where request body data is required to be sent with the API this can be added with the "body" key.
 
-	    manager.addCall("/that", { method: "post", body: { hello: "world" } });
+    manager.addCall("/that", { method: "post", body: { hello: "world" } });
 
 JSON objects are stringified and encoded automatically.
  

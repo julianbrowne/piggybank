@@ -46,7 +46,7 @@ function Piggybank(root) {
         return callManager.deferred.promise();
     };
 
-    this.makeCallsSynchronously = function() {
+    this.makeCallsSynchronously = function() { 
         return this.builder(0, $.Deferred());
     };
 
