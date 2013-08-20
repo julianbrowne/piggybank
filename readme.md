@@ -23,11 +23,11 @@ Tested on Chrome V28 but should work in most browsers
 
         var manager = new Piggybank("http://127.0.0.1");
 
-        manager.timeout = 1000;                 // ms timeout. Default is 10000 (10 secs)
+        manager.timeout = 1000;                            // ms timeout. Default is 10000 (10 secs)
 
-        manager.addCall("/this");               // "get" by default
-        manager.addCall("/that", "post");       // or "post"
-        manager.addCall("/theother", "put");
+        manager.addCall("/this");                          // "get" by default
+        manager.addCall("/that", { method: "post"});       // or "post"
+        manager.addCall("/theother", { method: "put" });
 
         manager.makeCalls().done(manager.resultWriter);
 
@@ -35,36 +35,49 @@ Tested on Chrome V28 but should work in most browsers
 
 Piggybank is instantiated with the root server calls are to be made to. Beware of Same Origin Policy if calling to a host/port combo that's different from the one Piggbank is running on. There's no [JSONP](http://en.wikipedia.org/wiki/JSONP) support in Piggybank yet. Cross domain calls will work through Piggybank/JQuery as long as the remote host is set up to suport [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
 
-Calls will then be made in the order "/this", then "/that", then "/theother".
+#### Arguments
 
-Piggybank will then collate results from all calls, returing only when all have completed.  
+Any keys passed as the second argument object will come back in the results list, making it easier to identify individual calls later. e.g.
 
-Results passed as results object to the resultWriter function with integer keys denoting the results of each call.
+    manager.addCall("/that", { method: "post", name: "posting some data to /that" });
 
-e.g. obj[0] is result of first call, obj[1] result of second etc.
+#### Call Order
 
-Each result object contains the http response code status (obj.status) and the textual equivilent (obj.text).
+Calls will be made in the order "/this", then "/that", then "/theother". Piggybank will then collate results from all calls, returing only when all have completed or timed out.
+
+#### Results
+
+Results passed as results object to the resultWriter function with integer keys denoting the results of each call. e.g. obj[0] is result of first call, obj[1] result of second etc. Each result object contains the http response code status (obj.status) and the textual equivilent (obj.text).
 
 e.g.
 
     {
         "0": {
             "url":"test.html",
-            "method":"get",
+            "data" : {
+                "method":"get",
+                "id":"0"
+            },
             "status":200,
             "text":"OK"
         },
 
         "1": {
             "url":"index.html",
-            "method":"post",
+            "data" : {
+                "method":"post",
+                "id":"1"
+            },
             "status":200,
             "text":"OK"
         },
 
         "2": {
             "url":"not-there.html",
-            "method":"put",
+            "data" : {
+                "method":"put",
+                "id":"2"
+            },
             "status":404,
             "text":"Not Found"
         }
@@ -81,8 +94,8 @@ The set up is identical to async mode but with a different call to kick start ex
     var manager = new Piggybank("http://127.0.0.1");
 
     manager.addCall("/this");       
-    manager.addCall("/that", "post");
-    manager.addCall("/theother", "put");
+    manager.addCall("/that", { method: "post"});
+    manager.addCall("/theother", { method: "put" });
 
     manager.makeCallsSynchronously().done(result_writer_callback_here);
 

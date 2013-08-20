@@ -13,10 +13,11 @@ function Piggybank(root) {
     this.last = null;
     this.ignore404 = false;
 
-    this.addCall = function(url, method) { 
-        var method = method === undefined ? 'get' : method;
-        var index = this.queue.length;
-        this.queue.push({ url: url, id: index, method: method });
+    this.addCall = function(url, callData) { 
+        callData = (callData === undefined) ? {} : callData;
+        callData.method = (callData.method === undefined) ? 'get' : callData.method;
+        callData.id = this.queue.length;
+        this.queue.push({ url: url, data: callData });
     };
 
     this.makeCalls = function() { 
@@ -24,7 +25,7 @@ function Piggybank(root) {
         this.queue.forEach(function(api) { 
             var call = $.ajax({ 
                     url: callManager.root + api.url,
-                    type: api.method,
+                    type: api.data.method,
                     timeout: callManager.timeout
             });
 
@@ -32,18 +33,18 @@ function Piggybank(root) {
                 callManager.last.then(function(d) { 
                     callManager.last = call;
                     call
-                        .done(callManager.callPassed(api.url, api.id))
-                        .fail(callManager.callFailed(api.url, api.id));
+                        .done(callManager.callPassed(api.url, api.data))
+                        .fail(callManager.callFailed(api.url, api.data));
                 },
                 function() { 
-                    callManager.callFailed(api.url, api.id);
+                    callManager.callFailed(api.url, api.data);
                 });
             }
             else { 
                 callManager.last = call;
                 call
-                    .done(callManager.callPassed(api.url, api.id))
-                    .fail(callManager.callFailed(api.url, api.id));
+                    .done(callManager.callPassed(api.url, api.data))
+                    .fail(callManager.callFailed(api.url, api.data));
             }
 
         });
@@ -57,7 +58,7 @@ function Piggybank(root) {
     this.builder = function(index, deferred, lastResult) { 
 
         if(lastResult !== undefined) { 
-            callManager.postResult(lastResult, (index -1) );
+            callManager.postResult(lastResult, callManager.queue[index-1].data );
         }
         else {
             callManager.deferred = $.Deferred();
@@ -71,7 +72,7 @@ function Piggybank(root) {
                 function() { 
                     $.ajax({ 
                         url: callManager.root + callManager.queue[index].url,
-                        type: callManager.queue[index].method,
+                        type: callManager.queue[index].data.method,
                         timeout: callManager.timeout
                     }).then( 
                         function(data, textStatus, jqXHR) { 
@@ -86,7 +87,7 @@ function Piggybank(root) {
                                 next.resolve();
                             }
                             else {
-                                callManager.postResult(jqXHR, index);
+                                callManager.postResult(jqXHR, callManager.queue[index].data);
                                 callManager.deferred.resolve(callManager.results);
                             }
                         }
@@ -99,15 +100,15 @@ function Piggybank(root) {
 
     };
 
-    this.callPassed = function(url, index) { 
+    this.callPassed = function(url, callData) { 
         return function(data, textStatus, jqXHR) { 
-            callManager.postResultAndCheckProgress(jqXHR, index);
+            callManager.postResultAndCheckProgress(jqXHR, callData);
         };
     };
 
-    this.callFailed = function(url, index) { 
+    this.callFailed = function(url, callData) { 
         return function(jqXHR, textStatus, errorThrown) { 
-            callManager.postResultAndCheckProgress(jqXHR, index);
+            callManager.postResultAndCheckProgress(jqXHR, callData);
         };
     };
 
@@ -115,10 +116,11 @@ function Piggybank(root) {
      *  Add result to list
     **/
 
-    this.postResult = function(result, index) { 
-        callManager.results[index] = { 
-            url: callManager.queue[index].url,
-            method: callManager.queue[index].method,
+    this.postResult = function(result, callData) { 
+        console.log(callData);
+        callManager.results[callData.id] = { 
+            url: callManager.queue[callData.id].url,
+            data: callManager.queue[callData.id].data,
             status: result.status, 
             text: result.statusText
         };
@@ -128,8 +130,8 @@ function Piggybank(root) {
      *  Add result to list and check if all results are in
     **/
 
-    this.postResultAndCheckProgress = function(result, index) { 
-        this.postResult(result, index);
+    this.postResultAndCheckProgress = function(result, callData) { 
+        this.postResult(result, callData);
         if(callManager.queue.length === Object.keys(callManager.results).length) {
             callManager.deferred.resolve(callManager.results);
         }
