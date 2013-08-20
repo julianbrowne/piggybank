@@ -1,0 +1,23 @@
+{
+  "name": "piggybank",
+  "preferGlobal": true,
+  "version": "0.0.1",
+  "author": "Julian Browne",
+  "description": "Handles multiple ajax calls in sequence, sync or async, and collates results",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/julianbrowne/piggybank.git"
+  },
+  "keywords": [
+    "rest",
+    "ajax",
+    "sync",
+    "async",
+    "synchronous",
+    "asynchronous"
+  ],
+  "dependencies" : {
+    "jquery"   :  "2.0.3"
+  },
+  "license": "OSL-3.0",
+}
