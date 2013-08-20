@@ -23,12 +23,7 @@ function Piggybank(root) {
     this.makeCalls = function() { 
         callManager.deferred = $.Deferred();
         this.queue.forEach(function(api) { 
-            var call = $.ajax({ 
-                    url: callManager.root + api.url,
-                    type: api.data.method,
-                    timeout: callManager.timeout
-            });
-
+            var call = callManager.ajaxCall(api);
             if(callManager.last !== null) { 
                 callManager.last.then(function(d) { 
                     callManager.last = call;
@@ -70,11 +65,8 @@ function Piggybank(root) {
         else { 
             deferred.then(
                 function() { 
-                    $.ajax({ 
-                        url: callManager.root + callManager.queue[index].url,
-                        type: callManager.queue[index].data.method,
-                        timeout: callManager.timeout
-                    }).then( 
+                    callManager.ajaxCall(callManager.queue[index])
+                    .then( 
                         function(data, textStatus, jqXHR) { 
                             next = $.Deferred();
                             callManager.builder(++index, next, jqXHR);
@@ -99,6 +91,18 @@ function Piggybank(root) {
         }
         return callManager.deferred.promise();
 
+    };
+
+    this.ajaxCall = function(apiData) { 
+        var config = { 
+            url: callManager.root + apiData.url,
+            type: apiData.data.method,
+            timeout: callManager.timeout
+        };
+        if(apiData.data.body !== undefined) {
+            config.data = JSON.stringify(apiData.data.body);
+        }
+        return $.ajax(config);
     };
 
     this.callPassed = function(url, callData) { 

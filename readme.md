@@ -44,7 +44,13 @@ Any keys passed as the second argument object will come back in the results list
 If the data object contains a key called "expect" then this will be compared with the actual HTTP response code recieved and a key added to the results called "expected" with a true or false value depending on whether the return code matched that expected.
 
     manager.addCall("/that", { method: "post", name: "update that", expect: 204 });
+    
+Where request body data is required to be sent with the API this can be added with the "body" key.
 
+	    manager.addCall("/that", { method: "post", body: { hello: "world" } });
+
+JSON objects are stringified and encoded automatically.
+ 
 #### Call Order
 
 Calls will be made in the order "/this", then "/that", then "/theother". Piggybank will then collate results from all calls, returing only when all have completed or timed out.
