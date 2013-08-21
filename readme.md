@@ -7,7 +7,7 @@ Piggybank can manage both async and sync (wait for last to complete before next 
 
 ### Requirements
 
-Piggybank requires JQuery v2.0.3   
+Piggybank requires JQuery v2.0.3 and JQuery Cookie 1.3.1   
 Tested on Chrome V28 but should work in most browsers   
 
 ### Example (Async)
@@ -15,6 +15,7 @@ Tested on Chrome V28 but should work in most browsers
     ...
 
     <script src="jquery-2.0.3.js"></script>
+    <script src="jquery.cookie.js"></script>
     <script src="piggybank.js"></script>
 
     ...
@@ -59,12 +60,16 @@ using **encoding: "form"**
 
     manager.addCall("/that", { method: "post", encoding: "form", body: { hello: "world" } });
 
-to keep a copy of data returned from the call use "remember"
+To keep a copy of JSON data returned from the call use "remember"
 
     manager.addCall("/login", { method: "post", encoding: "form", body: { username: "fred", password: "secret" }, remember: "session" });
 
-If the call succeeds, then the results set will now contain a key called "session" containing the server response.
- 
+If the call succeeds, then the results set will now contain a key called "session" containing the server response.  
+
+To set a cookie, use the "cookies" key.
+
+    manager.addCall("/user/42", { method: "get", cookies: { cookieName: "cookie_value" }, name: "get user 42 details" });
+
 #### Call Order
 
 Calls will be made in the order "/this", then "/that", then "/theother". Piggybank will then collate results from all calls, returing only when all have completed or timed out.

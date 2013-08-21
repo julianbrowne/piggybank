@@ -12,12 +12,19 @@ function Piggybank(root) {
     this.root = root;
     this.last = null;
     this.ignore404 = false;
+    this.memory = {};
 
     this.addCall = function(url, callData) { 
         callData = (callData === undefined) ? {} : callData;
         callData.method = (callData.method === undefined) ? 'get' : callData.method;
         callData.id = this.queue.length;
         this.queue.push({ url: url, data: callData });
+    };
+
+    this.recall = function(key) { 
+        return function() { 
+            return eval("callManager.memory." + key);
+        }
     };
 
     this.makeCalls = function() { 
@@ -97,16 +104,34 @@ function Piggybank(root) {
         var config = { 
             url: callManager.root + apiData.url,
             type: apiData.data.method,
+            headers: {},
             timeout: callManager.timeout
         };
+
+        // Add request body
 
         if(apiData.data.body !== undefined) { 
             config.data = JSON.stringify(apiData.data.body);
         }
 
+        // Add cookies
+
+        if(apiData.data.cookies !== undefined) { 
+            Object.keys(apiData.data.cookies).forEach(
+                function(c) { 
+                    if(typeof(apiData.data.cookies[c]) === 'object') {
+                        apiData.data.cookies[c] = eval("callManager.memory." + apiData.data.cookies[c].recall);     // smell - needs functional fix
+                    }
+                    $.cookie(c, apiData.data.cookies[c], { path: '/' });
+                }
+            );
+        }
+
+        // Add form encoded header and reformat request body
+
         if(apiData.data.encoding !== undefined) { 
             if(apiData.data.encoding==='form') { 
-                config.headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+                config.headers['Content-Type'] = 'application/x-www-form-urlencoded';
                 config.data = "";
                 Object.keys(apiData.data.body).forEach(
                     function(key) { 
@@ -117,6 +142,7 @@ function Piggybank(root) {
                 apiData.data.body = config.data;
             }
         }
+        console.log(config);
         return $.ajax(config);
     };
 
@@ -143,6 +169,7 @@ function Piggybank(root) {
             status: result.status, 
             text:   result.statusText
         };
+
         if(callData.expect !== undefined) { 
             if(result.status === callData.expect) { 
                 callManager.results[callData.id].data.expected = true;
@@ -151,10 +178,10 @@ function Piggybank(root) {
                 callManager.results[callData.id].data.expected = false;
             }
         }
-        if(callData.remember !== undefined) { 
-            callData[callData.remember] = result.responseJSON;
-        }
 
+        if(callData.remember !== undefined) { 
+            callManager.memory[callData.remember] = callData[callData.remember] = result.responseJSON;
+        }
     };
 
     /**
