@@ -50,6 +50,14 @@ Where request body data is required to be sent with the API this can be added wi
     manager.addCall("/that", { method: "post", body: { hello: "world" } });
 
 JSON objects are stringified and encoded automatically.
+
+To simulate an HTML form POST the body data can be send with the
+
+    content-type: application/x-www-form-urlencoded
+
+using **encoding: "form"**  
+
+    manager.addCall("/that", { method: "post", encoding: "form", body: { hello: "world" } });
  
 #### Call Order
 

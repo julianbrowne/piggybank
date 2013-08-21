@@ -99,8 +99,23 @@ function Piggybank(root) {
             type: apiData.data.method,
             timeout: callManager.timeout
         };
-        if(apiData.data.body !== undefined) {
+
+        if(apiData.data.body !== undefined) { 
             config.data = JSON.stringify(apiData.data.body);
+        }
+
+        if(apiData.data.encoding !== undefined) { 
+            if(apiData.data.encoding==='form') { 
+                config.headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+                config.data = "";
+                Object.keys(apiData.data.body).forEach(
+                    function(key) { 
+                        config.data += key + "=" + encodeURIComponent(apiData.data.body[key]) + "&"
+                    }
+                );
+                config.data = config.data.substring(0, config.data.length - 1);
+                apiData.data.body = config.data;
+            }
         }
         return $.ajax(config);
     };
