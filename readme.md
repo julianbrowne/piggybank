@@ -58,6 +58,12 @@ To simulate an HTML form POST the body data can be send with the
 using **encoding: "form"**  
 
     manager.addCall("/that", { method: "post", encoding: "form", body: { hello: "world" } });
+
+to keep a copy of data returned from the call use "remember"
+
+    manager.addCall("/login", { method: "post", encoding: "form", body: { username: "fred", password: "secret" }, remember: "session" });
+
+If the call succeeds, then the results set will now contain a key called "session" containing the server response.
  
 #### Call Order
 

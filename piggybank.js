@@ -151,6 +151,10 @@ function Piggybank(root) {
                 callManager.results[callData.id].data.expected = false;
             }
         }
+        if(callData.remember !== undefined) { 
+            callData[callData.remember] = result.responseJSON;
+        }
+
     };
 
     /**
