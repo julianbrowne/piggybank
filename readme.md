@@ -30,7 +30,7 @@ Tested on Chrome V28 but should work in most browsers
         manager.addCall("/that", { method: "post"});       // or "post"
         manager.addCall("/theother", { method: "put" });
 
-        manager.makeCalls().done(manager.resultWriter);
+        manager.makeCalls().done(resultCallback);
 
     </script>
 
@@ -45,6 +45,12 @@ Any keys passed as the second argument object will come back in the results list
 If the data object contains a key called "expect" then this will be compared with the actual HTTP response code recieved and a key added to the results called "expected" with a true or false value depending on whether the return code matched that expected.
 
     manager.addCall("/that", { method: "post", name: "update that", expect: 204 });
+
+Where an expect code is set, it's also possible to indicate that subsequent calls should be abandoned if there's a mismatch between expected and actual HTTP response codes. This is useful when, for example, a login call fails and the rest of the calls become irrelevant or where following calls might have unpredictable and destructive effects.
+
+	manager.stopOnSurprise = true;
+
+indicates that a mismatch should halt the test sequence.
     
 Where request body data is required to be sent with the API this can be added with the "body" key.
 
@@ -69,6 +75,14 @@ If the call succeeds, then the results set will now contain a key called "sessio
 To set a cookie, use the "cookies" key.
 
     manager.addCall("/user/42", { method: "get", cookies: { cookieName: "cookie_value" }, name: "get user 42 details" });
+    
+Piggybank logs useful information to the browser console by default. It's possible to override the default action by passing on a reference to a logging function of the form:
+
+	function(message) { // do something with message  }
+	
+And attaching it to the piggybank instance:
+
+	b.logger = myLoggingFunction;
 
 #### Call Order
 
@@ -76,7 +90,9 @@ Calls will be made in the order "/this", then "/that", then "/theother". Piggyba
 
 #### Results
 
-Results passed as results object to the resultWriter function with integer keys denoting the results of each call. e.g. obj[0] is result of first call, obj[1] result of second etc. Each result object contains the http response code status (obj.status) and the textual equivilent (obj.text).
+Results are passed as a full results object to the done callback.  
+
+The results object contains integer keys denoting the results of each call. e.g. obj[0] is result of first call, obj[1] result of second etc. Each result object contains the http response code status (obj.status) and the textual equivilent (obj.text).
 
 e.g.
 
@@ -114,8 +130,6 @@ e.g.
             "text":"Not Found"
         }
     }
-
-There's a resultWriter call available as part of the Piggybank instance (in the example above) which just passes the results to the browser console.
 
 ### Example (Sync)
 

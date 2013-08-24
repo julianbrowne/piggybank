@@ -4,15 +4,18 @@
 
 function Piggybank(root) { 
 
-    var callManager = this;
+    var piggy = this;
     this.queue = [];
     this.results = {};
     this.deferred = null;
     this.timeout = 10000;
     this.root = root;
     this.last = null;
-    this.ignore404 = false;
+    this.ignore404 = false;             // continue if HTTP 404 response
+    this.ignoreErrors = false;          // continue if any HTTP error
+    this.stopOnSurprise = true;         // stop if HTTP response != what's expected
     this.memory = {};
+    this.logger = console.log;
 
     this.addCall = function(url, callData) { 
         callData = (callData === undefined) ? {} : callData;
@@ -23,72 +26,84 @@ function Piggybank(root) {
 
     this.recall = function(key) { 
         return function() { 
-            return eval("callManager.memory." + key);
+            return eval("piggy.memory." + key);
         }
     };
 
+    this.log = function(message) {
+        this.logger(message + "<br/>");
+    }
+
     this.makeCalls = function() { 
-        callManager.deferred = $.Deferred();
+        piggy.deferred = $.Deferred();
         this.queue.forEach(function(api) { 
-            var call = callManager.ajaxCall(api);
-            if(callManager.last !== null) { 
-                callManager.last.then(function(d) { 
-                    callManager.last = call;
+            var call = piggy.ajaxCall(api);
+            if(piggy.last !== null) { 
+                piggy.last.then(function(d) { 
+                    piggy.last = call;
                     call
-                        .done(callManager.callPassed(api.url, api.data))
-                        .fail(callManager.callFailed(api.url, api.data));
+                        .done(piggy.callPassed(api.url, api.data))
+                        .fail(piggy.callFailed(api.url, api.data));
                 },
                 function() { 
-                    callManager.callFailed(api.url, api.data);
+                    piggy.callFailed(api.url, api.data);
                 });
             }
             else { 
-                callManager.last = call;
+                piggy.last = call;
                 call
-                    .done(callManager.callPassed(api.url, api.data))
-                    .fail(callManager.callFailed(api.url, api.data));
+                    .done(piggy.callPassed(api.url, api.data))
+                    .fail(piggy.callFailed(api.url, api.data));
             }
 
         });
-        return callManager.deferred.promise();
+        return piggy.deferred.promise();
     };
 
     this.makeCallsSynchronously = function() { 
-        return this.builder(0, $.Deferred());
+        // clear all cookies before start
+        var cookies = document.cookie.split(";");
+        for (var i=0; i < cookies.length; i++) { 
+            var cookie = cookies[i];
+            var eqPos = cookie.indexOf("=");
+            var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+            $.removeCookie(name);
+        }
+        var m = this.builder(0, $.Deferred());
+        return m;
     };
 
     this.builder = function(index, deferred, lastResult) { 
 
         if(lastResult !== undefined) { 
-            callManager.postResult(lastResult, callManager.queue[index-1].data );
+            piggy.postResult(lastResult, piggy.queue[index-1].data );
         }
         else {
-            callManager.deferred = $.Deferred();
+            piggy.deferred = $.Deferred();
         }
 
-        if(index === callManager.queue.length) { 
+        if(index === piggy.queue.length) { 
             this.deferred.resolve(this.results);
         }
         else { 
-            deferred.then(
+            deferred.then( 
                 function() { 
-                    callManager.ajaxCall(callManager.queue[index])
+                    piggy.ajaxCall(piggy.queue[index])
                     .then( 
                         function(data, textStatus, jqXHR) { 
-                            next = $.Deferred();
-                            callManager.builder(++index, next, jqXHR);
-                            next.resolve();
+                            if(piggy.stopOnSurprise && piggy.queue[index].data.expect !== undefined) { 
+                                if(jqXHR.status !== piggy.queue[index].data.expect) { 
+                                    quitTestCycle(jqXHR, piggy.queue[index].data);
+                                }
+                            }
+                            continueTestCycle(jqXHR);
                         },
                         function(jqXHR, textStatus, errorThrown) { 
-                            if(    (jqXHR.status === 404 && callManager.ignore404)
-                                || (callManager.ignoreErrors === true) ) {
-                                    next = $.Deferred();
-                                    callManager.builder(++index, next, jqXHR);
-                                    next.resolve();
+                            if((jqXHR.status === 404 && piggy.ignore404) || (piggy.ignoreErrors === true)) { 
+                                    continueTestCycle(jqXHR);
                             }
-                            else {
-                                callManager.postResult(jqXHR, callManager.queue[index].data);
-                                callManager.deferred.resolve(callManager.results);
+                            else { 
+                                quitTestCycle(jqXHR, piggy.queue[index].data);
                             }
                         }
                     )
@@ -96,16 +111,27 @@ function Piggybank(root) {
             );
             deferred.resolve();
         }
-        return callManager.deferred.promise();
+        return piggy.deferred.promise();
+
+        function quitTestCycle(result, callData) { 
+            piggy.postResult(result, callData);
+            piggy.deferred.resolve(piggy.results);
+        };
+
+        function continueTestCycle(result) { 
+            next = $.Deferred();                        // future object for this test
+            piggy.builder(++index, next, result);       // all the other tests that must come first
+            next.resolve();                             // resolve this test
+        };
 
     };
 
     this.ajaxCall = function(apiData) { 
         var config = { 
-            url: callManager.root + apiData.url,
+            url: piggy.root + apiData.url,
             type: apiData.data.method,
             headers: {},
-            timeout: callManager.timeout
+            timeout: piggy.timeout
         };
 
         // Add request body
@@ -120,7 +146,13 @@ function Piggybank(root) {
             Object.keys(apiData.data.cookies).forEach(
                 function(c) { 
                     if(typeof(apiData.data.cookies[c]) === 'object') {
-                        apiData.data.cookies[c] = eval("callManager.memory." + apiData.data.cookies[c].recall);     // smell - needs functional fix
+                        try {
+                            apiData.data.cookies[c] = eval("piggy.memory." + apiData.data.cookies[c].recall);     // smell - needs functional fix
+                        }
+                        catch(e) {
+                            piggy.log("Could not resolve " + apiData.data.cookies[c].recall);
+                            return;
+                        }
                     }
                     $.cookie(c, apiData.data.cookies[c], { path: '/' });
                 }
@@ -130,10 +162,10 @@ function Piggybank(root) {
         // Add form encoded header and reformat request body
 
         if(apiData.data.encoding !== undefined) { 
-            if(apiData.data.encoding==='form') { 
+            if(apiData.data.encoding === 'form') { 
                 config.headers['Content-Type'] = 'application/x-www-form-urlencoded';
                 config.data = "";
-                Object.keys(apiData.data.body).forEach(
+                Object.keys(apiData.data.body).forEach( 
                     function(key) { 
                         config.data += key + "=" + encodeURIComponent(apiData.data.body[key]) + "&"
                     }
@@ -142,19 +174,18 @@ function Piggybank(root) {
                 apiData.data.body = config.data;
             }
         }
-        console.log(config);
         return $.ajax(config);
     };
 
     this.callPassed = function(url, callData) { 
         return function(data, textStatus, jqXHR) { 
-            callManager.postResultAndCheckProgress(jqXHR, callData);
+            piggy.postResultAndCheckProgress(jqXHR, callData);
         };
     };
 
     this.callFailed = function(url, callData) { 
         return function(jqXHR, textStatus, errorThrown) { 
-            callManager.postResultAndCheckProgress(jqXHR, callData);
+            piggy.postResultAndCheckProgress(jqXHR, callData);
         };
     };
 
@@ -163,8 +194,8 @@ function Piggybank(root) {
     **/
 
     this.postResult = function(result, callData) { 
-        callManager.results[callData.id] = { 
-            url:    callManager.queue[callData.id].url,
+        piggy.results[callData.id] = { 
+            url:    piggy.queue[callData.id].url,
             data:   callData,
             status: result.status, 
             text:   result.statusText
@@ -172,15 +203,15 @@ function Piggybank(root) {
 
         if(callData.expect !== undefined) { 
             if(result.status === callData.expect) { 
-                callManager.results[callData.id].data.expected = true;
+                piggy.results[callData.id].data.expected = true;
             }
             else {
-                callManager.results[callData.id].data.expected = false;
+                piggy.results[callData.id].data.expected = false;
             }
         }
 
         if(callData.remember !== undefined) { 
-            callManager.memory[callData.remember] = callData[callData.remember] = result.responseJSON;
+            piggy.memory[callData.remember] = callData[callData.remember] = result.responseJSON;
         }
     };
 
@@ -190,17 +221,9 @@ function Piggybank(root) {
 
     this.postResultAndCheckProgress = function(result, callData) { 
         this.postResult(result, callData);
-        if(callManager.queue.length === Object.keys(callManager.results).length) {
-            callManager.deferred.resolve(callManager.results);
+        if(piggy.queue.length === Object.keys(piggy.results).length) {
+            piggy.deferred.resolve(piggy.results);
         }
-    };
-
-    /**
-     *  Dumb output function for testing
-    **/
-
-    this.resultWriter = function(results) { 
-        console.log(results);
     };
 
 };
