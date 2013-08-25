@@ -140,7 +140,7 @@ If a schema is passed and the [tv4.js](https://github.com/geraintluff/tv4) libra
 
 Schema validation results will be returned in the form:
 
-    {
+    schemaCheck : {
         "errors": [
             {
                 "code": 302,

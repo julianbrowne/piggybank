@@ -219,7 +219,7 @@ function Piggybank(root) {
                 catch(e) { 
                     var validation = "invalid JSON received";
                 }
-                piggy.results[callData.id].data.schemaValid = validation;
+                piggy.results[callData.id].data.schemaCheck = validation;
             }
         }
 
