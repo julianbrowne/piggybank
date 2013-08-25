@@ -210,6 +210,19 @@ function Piggybank(root) {
             }
         }
 
+        if(callData.schema !== undefined) { 
+            if(window.tv4 !== undefined) { 
+                try { 
+                    var json = JSON.parse(result.responseText);
+                    var validation = tv4.validateMultiple(json, callData.schema);
+                }
+                catch(e) { 
+                    var validation = "invalid JSON received";
+                }
+                piggy.results[callData.id].data.schemaValid = validation;
+            }
+        }
+
         if(callData.remember !== undefined) { 
             piggy.memory[callData.remember] = callData[callData.remember] = result.responseJSON;
         }
