@@ -174,6 +174,7 @@ function Piggybank(root) {
                 apiData.data.body = config.data;
             }
         }
+        //console.log(config);
         return $.ajax(config);
     };
 
@@ -211,7 +212,7 @@ function Piggybank(root) {
         }
 
         if(callData.schema !== undefined) { 
-            if(window.tv4 !== undefined) { 
+            if(document.tv4 !== undefined) { 
                 try { 
                     var json = JSON.parse(result.responseText);
                     var validation = tv4.validateMultiple(json, callData.schema);
@@ -225,6 +226,10 @@ function Piggybank(root) {
 
         if(callData.remember !== undefined) { 
             piggy.memory[callData.remember] = callData[callData.remember] = result.responseJSON;
+            //console.log("Saving");
+            //console.log(result.responseJSON);
+            //console.log("-in-");
+            //console.log(callData.remember);
         }
     };
 
