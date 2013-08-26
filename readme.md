@@ -40,8 +40,6 @@ Piggybank is instantiated with the root server calls are to be made to. Beware o
 
         manager.makeCalls().done(resultCallback);
 
-    </script>
-
 Calls will be made asynchronously in the order "/this", then "/that", then "/theother". Piggybank will then collate results from all calls, returing only when all have completed or timed out. Individual calls will return in unpredicatble order depending on how long each one takes. To wait for the last call to finish before making the next one use sync mode.
 
 ### Example (Sync)
