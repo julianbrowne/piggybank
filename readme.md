@@ -17,7 +17,7 @@ Tested on Chrome V28 but should work in most browsers
 
     ...
 
-    <script src="jquery-2.0.3.js"></script>
+    <script src="jquery.js"></script>
     <script src="jquery.cookie.js"></script>    <!-- optional, for cookie management -->
     <script src="tv4.js"></script>              <!-- optional, for schema validation -->
     <script src="piggybank.js"></script>
