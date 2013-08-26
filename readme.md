@@ -7,9 +7,9 @@ Piggybank can manage both async and sync (wait for last to complete before next 
 
 ### Requirements
 
-Piggybank requires JQuery v2.0.3
-Optionally [JQuery Cookie](https://github.com/carhartl/jquery-cookie) 1.3.1 may be used for cookie management
-Optionally [tv4 JSON Schema Validator](https://github.com/geraintluff/tv4) 1.0.7 may be used for cookie management
+Piggybank requires JQuery v2.0.3  
+Optionally [JQuery Cookie](https://github.com/carhartl/jquery-cookie) 1.3.1 may be used for cookie management  
+Optionally [tv4 JSON Schema Validator](https://github.com/geraintluff/tv4) 1.0.7 may be used for cookie management  
 
 Tested on Chrome V28 but should work in most browsers  
 
