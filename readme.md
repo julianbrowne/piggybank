@@ -108,19 +108,23 @@ using **encoding: "form"**
 
     manager.addCall("/that", { method: "post", encoding: "form", body: { hello: "world" } });
 
-#### Session Data
-
-To keep a copy of JSON data returned from the call use "remember"
-
-    manager.addCall("/login", { method: "post", encoding: "form", body: { username: "fred", password: "secret" }, remember: "session" });
-
-If the call succeeds, then the results set will now contain a key called "session" containing the server response.  
-
 #### Cookies
 
 To set cookies, use the "cookies" key and make sure to include the [JQuery Cookie](https://github.com/carhartl/jquery-cookie) library.
 
     manager.addCall("/user/42", { method: "get", cookies: { cookieName: "cookie_value" }, name: "get user 42 details" });
+
+#### Session Data
+
+To keep a copy of JSON data returned from a call use "remember"
+
+    manager.addCall("/login", { method: "post", encoding: "form", body: { username: "fred", password: "secret" }, remember: "session" });
+
+If the call succeeds, then the full server response text (JSON) will now contain a key called "session". To retreive this data use "recall":
+
+    manager.addCall('/users/42', { method: "get", cookies: { my_session_key: { recall: "session.session_key" } }, name: "get user info" });
+
+This HTTP GET to /users/42 will set a cookie called my\_session\_key to the value session\_key within the session object remembered in the previous call.
 
 #### Logging
     
