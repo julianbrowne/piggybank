@@ -138,7 +138,7 @@ And attaching it to the piggybank instance:
 
 If a schema is passed and the [tv4.js](https://github.com/geraintluff/tv4) library is present a validation check will be made against JSON returned.
 
-    manager.addCall("/user/42", { method: "get", schema: { type: "object", properties: { "name": { "type": "string" } }, "required": [ "name" ] } });
+    manager.addCall("/user/42", { method: "get", schema: { type: "object", properties: { "name": { "type": "string" } }, required: [ "name" ] } });
 
 Schema validation results will be returned in the form:
 
@@ -155,6 +155,10 @@ Schema validation results will be returned in the form:
         "missing": [],
         "valid": false
     }
+
+#### Ajax Success/Failure Callbacks
+
+TODOC
 
 ### Results
 

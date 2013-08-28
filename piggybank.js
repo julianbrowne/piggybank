@@ -78,7 +78,7 @@ function Piggybank(root) {
         if(lastResult !== undefined) { 
             piggy.postResult(lastResult, piggy.queue[index-1].data );
         }
-        else {
+        else { 
             piggy.deferred = $.Deferred();
         }
 
@@ -91,6 +91,7 @@ function Piggybank(root) {
                     piggy.ajaxCall(piggy.queue[index])
                     .then( 
                         function(data, textStatus, jqXHR) { 
+                            piggy.ajaxSuccess();
                             if(piggy.stopOnSurprise && piggy.queue[index].data.expect !== undefined) { 
                                 if(jqXHR.status !== piggy.queue[index].data.expect) { 
                                     quitTestCycle(jqXHR, piggy.queue[index].data);
@@ -99,6 +100,7 @@ function Piggybank(root) {
                             continueTestCycle(jqXHR);
                         },
                         function(jqXHR, textStatus, errorThrown) { 
+                            piggy.ajaxFailure();
                             if((jqXHR.status === 404 && piggy.ignore404) || (piggy.ignoreErrors === true)) { 
                                     continueTestCycle(jqXHR);
                             }
@@ -123,6 +125,14 @@ function Piggybank(root) {
             piggy.builder(++index, next, result);       // all the other tests that must come first
             next.resolve();                             // resolve this test
         };
+
+    };
+
+    this.ajaxSuccess = function() {
+
+    };
+
+    this.ajaxFailure = function() {
 
     };
 
@@ -212,15 +222,22 @@ function Piggybank(root) {
         }
 
         if(callData.schema !== undefined) { 
-            if(document.tv4 !== undefined) { 
+            if(tv4 !== undefined) { 
                 try { 
                     var json = JSON.parse(result.responseText);
                     var validation = tv4.validateMultiple(json, callData.schema);
+                    // console.log("JSON received from server: " + result.responseText);
                 }
                 catch(e) { 
-                    var validation = "invalid JSON received";
+                    var problem = "Invalid JSON (" + result.responseText + ") received from server";
+                    // console.log(problem);
+                    // console.log(e);
+                    var validation = problem;
                 }
                 piggy.results[callData.id].data.schemaCheck = validation;
+            }
+            else {
+                console.log("schema passed but tv4 lib not included in page");
             }
         }
 
