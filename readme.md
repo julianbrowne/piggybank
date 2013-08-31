@@ -30,9 +30,21 @@ Tested on Chrome V28 but should work in most browsers
 
 Piggybank is instantiated with the root server calls are to be made to. Beware of Same Origin Policy if calling to a host/port combo that's different from the one Piggbank is running on. There's no [JSONP](http://en.wikipedia.org/wiki/JSONP) support in Piggybank yet. Cross domain calls will work through Piggybank/JQuery as long as the remote host is set up to suport [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
 
-### Example (Async)
+#### Options
 
-    manager.timeout = 1000;                            // ms timeout. Default is 10000 (10 secs)
+Piggybank takes an optional second argument object containing settings for the API calls to be made. e.g.
+
+        var manager = new Piggybank("http://127.0.0.1", { timeout: 1000 });
+
+Valid options are:
+
+*   **timeout: ms (default )** timeout for calls in ms
+*   **ignore404: true | false (default )** ignore 404 errors in sync mode and continue to next API call
+*   **ignoreErrors: true | false (default )** ignore all HTTP errors (5xx etc) in sync mode and continue to next API call
+*   **stopOnSurprise: true | false (default )** Where an expect code is set, it's also possible to indicate that subsequent calls should be abandoned if there's a mismatch between expected and actual HTTP response codes. This is useful when, for example, a login call fails and the rest of the calls become irrelevant or where following calls might have unpredictable and destructive effects.
+*   **logger: function (default none)** Piggybank logs useful information to the browser console by default. It's possible to override the default action by passing on a reference to a logging function.
+
+### Example (Async)
 
     manager.addCall("/this");                          // "get" by default
     manager.addCall("/that", { method: "post"});       // or "post"
@@ -56,17 +68,7 @@ The set up is identical to async mode but with a different call to kick start ex
 
     manager.makeCallsSynchronously().done(result_writer_callback_here);
 
-#### Error Handling in Sync Mode
-
-A 404 in JQuery ajax terms is considered an error. To ignore a 404 response and continue to the next API in sync mode simply set:
-
-    manager.ignore404 = true;
-
-Or to ignore all errors (5xx etc):
-
-    manager.ignoreErrors = true;
-
-### Arguments
+### addCall Arguments
 
 #### Arbitrary Data
 
@@ -79,14 +81,6 @@ Any keys passed as the second argument object will come back in the results list
 If the data object contains a key called "expect" then this will be compared with the actual HTTP response code recieved and a key added to the results called "expected" with a true or false value depending on whether the return code matched that expected.
 
     manager.addCall("/that", { method: "post", name: "update that", expect: 204 });
-
-#### Stop On Surprise
-
-Where an expect code is set, it's also possible to indicate that subsequent calls should be abandoned if there's a mismatch between expected and actual HTTP response codes. This is useful when, for example, a login call fails and the rest of the calls become irrelevant or where following calls might have unpredictable and destructive effects.
-
-	manager.stopOnSurprise = true;
-
-indicates that a mismatch should halt the test sequence.
 
 #### Request Body for POST and PUT
     
@@ -123,16 +117,6 @@ If the call succeeds, then the full server response text (JSON) will now contain
     manager.addCall('/users/42', { method: "get", cookies: { my_session_key: { recall: "session.session_key" } }, name: "get user info" });
 
 This HTTP GET to /users/42 will set a cookie called my\_session\_key to the value session\_key within the session object remembered in the previous call.
-
-#### Logging
-    
-Piggybank logs useful information to the browser console by default. It's possible to override the default action by passing on a reference to a logging function of the form:
-
-	function(message) { // do something with message  }
-	
-And attaching it to the piggybank instance:
-
-	b.logger = myLoggingFunction;
 
 #### Schema Validation
 

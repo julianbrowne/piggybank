@@ -2,7 +2,7 @@
  *  PiggyBank
 **/
 
-function Piggybank(root) { 
+function Piggybank(root, options) { 
 
     var piggy = this;
     this.queue = [];
@@ -11,17 +11,34 @@ function Piggybank(root) {
     this.timeout = 10000;
     this.root = root;
     this.last = null;
-    this.ignore404 = false;             // continue if HTTP 404 response
-    this.ignoreErrors = false;          // continue if any HTTP error
-    this.stopOnSurprise = true;         // stop if HTTP response != what's expected
     this.memory = {};
     this.logger = console.log;
+
+    var options = (options === undefined) ? {} : options;
+
+    setOption('ignore404', false);
+    setOption('ignoreErrors', false);
+    setOption('stopOnSurprise', true);
+
+    this.results['summary'] = {
+        ignoreErrors: this.ignoreErrors,
+        ignore404: this.ignore404,
+        tests: 0,
+        passed: null,
+        passes: [],
+        fails: []
+    };
+
+    function setOption(option, def) {
+        this[option] = (options[option] === undefined) ? def : options[option];
+    };
 
     this.addCall = function(url, callData) { 
         callData = (callData === undefined) ? {} : callData;
         callData.method = (callData.method === undefined) ? 'get' : callData.method;
         callData.id = this.queue.length;
         this.queue.push({ url: url, data: callData });
+        this.results['summary'].tests += 1;
     };
 
     this.recall = function(key) { 
@@ -215,9 +232,15 @@ function Piggybank(root) {
         if(callData.expect !== undefined) { 
             if(result.status === callData.expect) { 
                 piggy.results[callData.id].data.expected = true;
+                piggy.results['summary'].passes.push(callData.id);
+                if(piggy.results['summary'].passed === null) {
+                    piggy.results['summary'].passed = true;
+                }
             }
             else {
                 piggy.results[callData.id].data.expected = false;
+                piggy.results['summary'].fails.push(callData.id);
+                piggy.results['summary'].passed = false;
             }
         }
 
