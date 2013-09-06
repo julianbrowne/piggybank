@@ -92,6 +92,8 @@ function Piggybank(root, options) {
 
     this.builder = function(index, deferred, lastResult) { 
 
+        var apiCallData = piggy.queue[index];
+
         if(lastResult !== undefined) { 
             piggy.postResult(lastResult, piggy.queue[index-1].data );
         }
@@ -100,29 +102,33 @@ function Piggybank(root, options) {
         }
 
         if(index === piggy.queue.length) { 
-            this.deferred.resolve(this.results);
+            this.deferred.resolve(piggy.results);
         }
         else { 
             deferred.then( 
                 function() { 
-                    piggy.ajaxCall(piggy.queue[index])
+                    piggy.ajaxCall(apiCallData)
                     .then( 
                         function(data, textStatus, jqXHR) { 
+                            apiCallData.outcome.timer.end = Date.now();
+                            apiCallData.outcome.timer.latency = apiCallData.outcome.timer.end - apiCallData.outcome.timer.start;
                             piggy.ajaxSuccess();
-                            if(piggy.stopOnSurprise && piggy.queue[index].data.expect !== undefined) { 
-                                if(jqXHR.status !== piggy.queue[index].data.expect) { 
-                                    quitTestCycle(jqXHR, piggy.queue[index].data);
+                            if(piggy.stopOnSurprise && apiCallData.data.expect !== undefined) { 
+                                if(jqXHR.status !== apiCallData.data.expect) { 
+                                    quitTestCycle(jqXHR, apiCallData.data);
                                 }
                             }
                             continueTestCycle(jqXHR);
                         },
                         function(jqXHR, textStatus, errorThrown) { 
+                            apiCallData.outcome.timer.end = Date.now();
+                            apiCallData.outcome.timer.latency = apiCallData.outcome.timer.end - apiCallData.outcome.timer.start;
                             piggy.ajaxFailure();
                             if((jqXHR.status === 404 && piggy.ignore404) || (piggy.ignoreErrors === true)) { 
                                     continueTestCycle(jqXHR);
                             }
                             else { 
-                                quitTestCycle(jqXHR, piggy.queue[index].data);
+                                quitTestCycle(jqXHR, apiCallData.data);
                             }
                         }
                     )
@@ -154,6 +160,7 @@ function Piggybank(root, options) {
     };
 
     this.ajaxCall = function(apiData) { 
+
         var config = { 
             url: piggy.root + apiData.url,
             type: apiData.data.method,
@@ -201,7 +208,15 @@ function Piggybank(root, options) {
                 apiData.data.body = config.data;
             }
         }
-        //console.log(config);
+
+        apiData.outcome = {
+            timer: {
+                start: Date.now()
+            }
+        };
+
+        //console.log(apiData);
+
         return $.ajax(config);
     };
 
@@ -222,55 +237,81 @@ function Piggybank(root, options) {
     **/
 
     this.postResult = function(result, callData) { 
-        piggy.results[callData.id] = { 
-            url:    piggy.queue[callData.id].url,
-            data:   callData,
-            status: result.status, 
-            text:   result.statusText
+
+        var apiCallId     = callData.id;
+        var apiData       = piggy.queue[apiCallId];
+        var resultSummary = piggy.results['summary'];
+
+        apiResults = { 
+            id: apiCallId,
+            url: apiData.url,
+            method: callData.method,
+            callData: callData,
+            outcome: apiData.outcome
         };
 
-        if(callData.expect !== undefined) { 
-            if(result.status === callData.expect) { 
-                piggy.results[callData.id].data.expected = true;
-                piggy.results['summary'].passes.push(callData.id);
-                if(piggy.results['summary'].passed === null) {
-                    piggy.results['summary'].passed = true;
-                }
-            }
-            else {
-                piggy.results[callData.id].data.expected = false;
-                piggy.results['summary'].fails.push(callData.id);
-                piggy.results['summary'].passed = false;
-            }
-        }
+        if(apiData.data.expectation !== undefined) { 
 
-        if(callData.schema !== undefined) { 
-            if(tv4 !== undefined) { 
-                try { 
-                    var json = JSON.parse(result.responseText);
-                    var validation = tv4.validateMultiple(json, callData.schema);
-                    // console.log("JSON received from server: " + result.responseText);
+            apiResults.expectation = apiData.data.expectation;
+
+            apiResults.outcome.response = { 
+                received: result.status, 
+                text: result.statusText
+            };
+
+            if(result.status === apiResults.expectation.response) { 
+                apiResults.outcome.response.expectationMet = true;
+                resultSummary.passes.push(callData.id);
+                if(resultSummary.passed === null) { 
+                    resultSummary.passed = true;
                 }
-                catch(e) { 
-                    var problem = "Invalid JSON (" + result.responseText + ") received from server";
-                    // console.log(problem);
-                    // console.log(e);
-                    var validation = problem;
-                }
-                piggy.results[callData.id].data.schemaCheck = validation;
             }
             else {
-                console.log("schema passed but tv4 lib not included in page");
+                apiResults.outcome.response.expectationMet = false;
+                resultSummary.fails.push(callData.id);
+                resultSummary.passed = false;
             }
+
+            if(apiResults.expectation.schema !== undefined) { 
+                if(tv4 !== undefined) { 
+                    try { 
+                        var json = JSON.parse(result.responseText);
+                        var validation = tv4.validateMultiple(json, apiResults.expectation.schema);
+                    }
+                    catch(e) { 
+                        var problem = "Invalid JSON (" + result.responseText + ") received from server";
+                        var validation = problem;
+                    }
+                    apiResults.outcome.schema = validation;
+                    apiResults.outcome.schema.expectationMet = (apiResults.outcome.schema.valid === true) ? true : false;
+                }
+                else {
+                    console.log("schema expectation set but tv4 lib not included in page");
+                }
+            }
+
+            if(apiResults.expectation.latency !== undefined) {
+                apiResults.outcome.timer.difference = parseInt(apiResults.outcome.timer.latency) - parseInt(apiResults.expectation.latency);
+                if(apiResults.expectation.latency >= apiResults.outcome.timer.latency) { 
+                    apiResults.outcome.timer.expectationMet = true;
+                }
+                else { 
+                    apiResults.outcome.timer.expectationMet = false;
+                }
+            }
+
+            //delete apiResults.callData.expectation;
+        }
+        else { 
+            apiResults.expectation = { };
         }
 
         if(callData.remember !== undefined) { 
             piggy.memory[callData.remember] = callData[callData.remember] = result.responseJSON;
-            //console.log("Saving");
-            //console.log(result.responseJSON);
-            //console.log("-in-");
-            //console.log(callData.remember);
         }
+
+        piggy.results[apiCallId] = apiResults;
+
     };
 
     /**
