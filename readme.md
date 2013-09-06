@@ -1,7 +1,7 @@
  
 ## Piggybank
 
-REST API (Ajax HTTP) Call Manager that takes a sequential list of REST api calls and makes them in order, collates all the return codes/results, then delivers them all back together as one.
+REST API (Ajax HTTP) Call Manager that takes a list of REST api calls and makes them sequentially, in order, collates all the return codes/results, then delivers them all back together as one.
 
 Piggybank can manage both async and sync (wait for last to complete before next one starts) calls.
 
@@ -10,7 +10,6 @@ Piggybank can manage both async and sync (wait for last to complete before next 
 Piggybank requires JQuery v2.0.3  
 Optionally [JQuery Cookie](https://github.com/carhartl/jquery-cookie) 1.3.1 may be used for cookie management  
 Optionally [tv4 JSON Schema Validator](https://github.com/geraintluff/tv4) 1.0.7 may be used for cookie management  
-
 Tested on Chrome V28 but should work in most browsers  
 
 ### Usage 
@@ -76,12 +75,6 @@ Any keys passed as the second argument object will come back in the results list
 
     manager.addCall("/that", { method: "post", name: "posting some data to /that" });
 
-#### Expected Return Code
-
-If the data object contains a key called "expect" then this will be compared with the actual HTTP response code recieved and a key added to the results called "expected" with a true or false value depending on whether the return code matched that expected.
-
-    manager.addCall("/that", { method: "post", name: "update that", expect: 204 });
-
 #### Request Body for POST and PUT
     
 Where request body data is required to be sent with the API this can be added with the "body" key.
@@ -118,11 +111,38 @@ If the call succeeds, then the full server response text (JSON) will now contain
 
 This HTTP GET to /users/42 will set a cookie called my\_session\_key to the value session\_key within the session object remembered in the previous call.
 
+#### Expectations
+
+Piggybank will accept a list of expectations describing how the API will behave.   
+Expectations are passed in an expectation object.   
+
+#### HTTP Response Code
+
+If the data object contains a key called "expect" then this will be compared with the actual HTTP response code recieved and a key added to the results called "expected" with a true or false value depending on whether the return code matched that expected.
+
+    manager.addCall("/that", { 
+    	method: "post",
+    	name: "update that",
+    	expectation: {
+    		response: 204
+    	}
+    });
+
+
 #### Schema Validation
 
-If a schema is passed and the [tv4.js](https://github.com/geraintluff/tv4) library is present a validation check will be made against JSON returned.
+If a schema is passed as an expectation, and the [tv4.js](https://github.com/geraintluff/tv4) library is present, a validation check will be made against JSON returned.
 
-    manager.addCall("/user/42", { method: "get", schema: { type: "object", properties: { "name": { "type": "string" } }, required: [ "name" ] } });
+    manager.addCall("/user/42", { 
+    	method: "get", 
+    	expectation: {
+    		response: 200,
+    		schema: { 
+    			type: "object", 
+    			properties: { "name": { "type": "string" } },
+    			required: [ "name" ]
+    		}
+   		});
 
 Schema validation results will be returned in the form:
 
@@ -140,49 +160,84 @@ Schema validation results will be returned in the form:
         "valid": false
     }
 
+#### Latency / Response Time
+
+Latency is expressed in milliseconds
+
+    manager.addCall("/user/42", { 
+    	method: "get", 
+    	expectation: {
+    		response: 200,
+    		latency: 500
+    	}
+    });
+
 #### Ajax Success/Failure Callbacks
 
-TODOC
+	--- TODOC ---
 
 ### Results
 
 Results are passed as a full results object to the done callback.  
 
-The results object contains integer keys denoting the results of each call. e.g. obj[0] is result of first call, obj[1] result of second etc. Each result object contains the http response code status (obj.status) and the textual equivilent (obj.text).
+The results object contains integer keys denoting the results of each call. e.g. obj[0] is result of first call, obj[1] result of second etc.   
+Each object contains a breakdown of what was called, the expectation set and the outcome observed.
 
-e.g.
 
     {
         "0": {
-            "url":"/this",
-            "data" : {
-                "method":"get",
-                "id":"0"
+            "id": 0,
+            "url": "/login",
+            "method": "post",
+            "callData": {
+                "id": 0,
+                "method": "post",
+                "encoding": "form",
+                "remember": "session",
+                "body": "username=some_user_name&password=some_secret",
+                "name": "login user fred"
+                "session": {
+                    "sessionid": "1234567890"
+                }
             },
-            "status":200,
-            "text":"OK"
+            "expectation": {
+                "response": 200,
+                "latency": 500,
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "sessionid": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "sessionid"
+                    ]
+                }
+            },
+            "outcome": {
+                "timer": {
+                    "start": 1378464020315,
+                    "end": 1378464020529,
+                    "latency": 214,
+                    "difference": -286,
+                    "expectationMet": true
+                },
+                "response": {
+                    "received": 201,
+                    "text": "Created",
+                    "expectationMet": false
+                },
+                "schema": {
+                    "errors": [],
+                    "missing": [],
+                    "valid": true,
+                    "expectationMet": true
+                }
+            }
         },
-
         "1": {
-            "url":"/that",
-            "data" : {
-                "method":"post",
-                "id":"1",
-                "name":"update that",
-                "expect":"204",
-                "expected":"true"
-            },
-            "status":204,
-            "text":"OK"
-        },
-
-        "2": {
-            "url":"theother",
-            "data" : {
-                "method":"put",
-                "id":"2"
-            },
-            "status":404,
-            "text":"Not Found"
+            // etc
         }
     }
+
