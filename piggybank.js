@@ -43,7 +43,7 @@ function Piggybank(root, options) {
 
     this.recall = function(key) { 
         return function() { 
-            return eval("piggy.memory." + key);
+            return resolve(piggy.memory, key);
         }
     };
 
@@ -181,7 +181,7 @@ function Piggybank(root, options) {
                 function(c) { 
                     if(typeof(apiData.data.cookies[c]) === 'object') {
                         try {
-                            apiData.data.cookies[c] = eval("piggy.memory." + apiData.data.cookies[c].recall);     // smell - needs functional fix
+                            apiData.data.cookies[c] = resolve(piggy.memory, apiData.data.cookies[c].recall);
                         }
                         catch(e) {
                             piggy.log("Could not resolve " + apiData.data.cookies[c].recall);
@@ -324,5 +324,21 @@ function Piggybank(root, options) {
             piggy.deferred.resolve(piggy.results);
         }
     };
+
+    function resolve(base, path) { 
+        var levels = path.split(".");
+        var result = base;
+        for(var i=0; i<levels.length; i++) { 
+            var level = levels[i];
+            if(result[level]!==undefined) { 
+                result = result[level];
+            }
+            else { 
+                return null;
+            }
+        }
+        return result;
+    };
+
 
 };
