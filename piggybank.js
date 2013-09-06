@@ -215,8 +215,6 @@ function Piggybank(root, options) {
             }
         };
 
-        //console.log(apiData);
-
         return $.ajax(config);
     };
 
