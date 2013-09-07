@@ -324,6 +324,7 @@ function Piggybank(root, options) {
     };
 
     function resolve(base, path) { 
+        if(base === undefined) return undefined;
         var levels = path.split(".");
         var result = base;
         for(var i=0; i<levels.length; i++) { 
@@ -332,7 +333,8 @@ function Piggybank(root, options) {
                 result = result[level];
             }
             else { 
-                return null;
+                console.log("Unable to resolve " + path);
+                return undefined;
             }
         }
         return result;
