@@ -13,6 +13,8 @@ function Piggybank(root, options) {
     this.last = null;
     this.memory = {};
     this.logger = console.log;
+    this.status = function(status) { };
+    this.allDone = false;
 
     var options = (options === undefined) ? {} : options;
 
@@ -20,7 +22,7 @@ function Piggybank(root, options) {
     setOption('ignoreErrors', false);
     setOption('stopOnSurprise', true);
 
-    this.results['summary'] = {
+    this.results['summary'] = { 
         ignoreErrors: this.ignoreErrors,
         ignore404: this.ignore404,
         tests: 0,
@@ -29,8 +31,8 @@ function Piggybank(root, options) {
         fails: []
     };
 
-    function setOption(option, def) {
-        this[option] = (options[option] === undefined) ? def : options[option];
+    function setOption(option, def) { 
+        piggy[option] = (options[option] === undefined) ? def : options[option];
     };
 
     this.addCall = function(url, callData) { 
@@ -47,7 +49,7 @@ function Piggybank(root, options) {
         }
     };
 
-    this.log = function(message) {
+    this.log = function(message) { 
         this.logger(message + "<br/>");
     }
 
@@ -113,8 +115,9 @@ function Piggybank(root, options) {
                             apiCallData.outcome.timer.end = Date.now();
                             apiCallData.outcome.timer.latency = apiCallData.outcome.timer.end - apiCallData.outcome.timer.start;
                             piggy.ajaxSuccess();
-                            if(piggy.stopOnSurprise && apiCallData.data.expect !== undefined) { 
-                                if(jqXHR.status !== apiCallData.data.expect) { 
+                            if(piggy.stopOnSurprise === true && apiCallData.data.expectation.response !== undefined) { 
+                                if(jqXHR.status !== apiCallData.data.expectation.response) { 
+                                    piggy.logger("* Response unexpected");
                                     quitTestCycle(jqXHR, apiCallData.data);
                                 }
                             }
@@ -124,7 +127,7 @@ function Piggybank(root, options) {
                             apiCallData.outcome.timer.end = Date.now();
                             apiCallData.outcome.timer.latency = apiCallData.outcome.timer.end - apiCallData.outcome.timer.start;
                             piggy.ajaxFailure();
-                            if((jqXHR.status === 404 && piggy.ignore404) || (piggy.ignoreErrors === true)) { 
+                            if((jqXHR.status === 404 && piggy.ignore404 === true) || (piggy.ignoreErrors === true)) { 
                                     continueTestCycle(jqXHR);
                             }
                             else { 
@@ -138,15 +141,25 @@ function Piggybank(root, options) {
         }
         return piggy.deferred.promise();
 
-        function quitTestCycle(result, callData) { 
-            piggy.postResult(result, callData);
+        function quitTestCycle(xhr, callData) { 
+            piggy.status(false);
+            piggy.logger("< Res: " + xhr.status);
+            piggy.postResult(xhr, callData);
             piggy.deferred.resolve(piggy.results);
+            piggy.allDone = true;
         };
 
-        function continueTestCycle(result) { 
-            next = $.Deferred();                        // future object for this test
-            piggy.builder(++index, next, result);       // all the other tests that must come first
-            next.resolve();                             // resolve this test
+        function continueTestCycle(xhr) { 
+            if(piggy.allDone === true) {
+                piggy.logger("* Ending test cycle");
+            }
+            else { 
+                piggy.status(true);
+                piggy.logger("< Res: " + xhr.status);
+                next = $.Deferred();                     // future object for this test
+                piggy.builder(++index, next, xhr);       // all the other tests that must come first
+                next.resolve();                          // resolve this test
+            }
         };
 
     };
@@ -196,7 +209,7 @@ function Piggybank(root, options) {
         // Add form encoded header and reformat request body
 
         if(apiData.data.encoding !== undefined) { 
-            if(apiData.data.encoding === 'form') { 
+            if(apiData.data.encoding === 'form' && apiData.data.body !== undefined) { 
                 config.headers['Content-Type'] = 'application/x-www-form-urlencoded';
                 config.data = "";
                 Object.keys(apiData.data.body).forEach( 
@@ -215,6 +228,11 @@ function Piggybank(root, options) {
             }
         };
 
+        if(apiData.data.name !== undefined) {
+            piggy.logger(apiData.data.name);
+        }
+        piggy.logger("> Req: " + config.url + " with method " + config.type.toString().toUpperCase());
+        piggy.logger("- Exp: " + apiData.data.expectation.response);
         return $.ajax(config);
     };
 
@@ -339,6 +357,5 @@ function Piggybank(root, options) {
         }
         return result;
     };
-
 
 };
