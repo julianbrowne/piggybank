@@ -232,7 +232,8 @@ function Piggybank(root, options) {
             piggy.logger(apiData.data.name);
         }
         piggy.logger("> Req: " + config.url + " with method " + config.type.toString().toUpperCase());
-        piggy.logger("- Exp: " + apiData.data.expectation.response);
+        if(apiData.data.expectation !== undefined)
+            piggy.logger("- Exp: " + apiData.data.expectation.response);
         return $.ajax(config);
     };
 
