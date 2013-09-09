@@ -12,7 +12,7 @@ function Piggybank(root, options) {
     this.root = root;
     this.last = null;
     this.memory = {};
-    this.logger = console.log;
+    this.logger = function(message) { console.log(message) };
     this.status = function(status) { };
     this.allDone = false;
 
@@ -48,10 +48,6 @@ function Piggybank(root, options) {
             return resolve(piggy.memory, key);
         }
     };
-
-    this.log = function(message) { 
-        this.logger(message + "<br/>");
-    }
 
     this.makeCalls = function() { 
         piggy.deferred = $.Deferred();
@@ -197,7 +193,7 @@ function Piggybank(root, options) {
                             apiData.data.cookies[c] = resolve(piggy.memory, apiData.data.cookies[c].recall);
                         }
                         catch(e) {
-                            piggy.log("Could not resolve " + apiData.data.cookies[c].recall);
+                            piggy.logger("Could not resolve " + apiData.data.cookies[c].recall);
                             return;
                         }
                     }
@@ -228,10 +224,12 @@ function Piggybank(root, options) {
             }
         };
 
-        if(apiData.data.name !== undefined) {
+        if(apiData.data.name !== undefined) { 
             piggy.logger(apiData.data.name);
         }
-        piggy.logger("> Req: " + config.url + " with method " + config.type.toString().toUpperCase());
+
+        piggy.logger("Req: " + config.url + " with method " + config.type);
+
         if(apiData.data.expectation !== undefined)
             piggy.logger("- Exp: " + apiData.data.expectation.response);
         return $.ajax(config);
@@ -303,7 +301,7 @@ function Piggybank(root, options) {
                     apiResults.outcome.schema.expectationMet = (apiResults.outcome.schema.valid === true) ? true : false;
                 }
                 else {
-                    console.log("schema expectation set but tv4 lib not included in page");
+                    piggy.logger("schema expectation set but tv4 lib not included in page");
                 }
             }
 
@@ -352,7 +350,7 @@ function Piggybank(root, options) {
                 result = result[level];
             }
             else { 
-                console.log("Unable to resolve " + path);
+                piggy.logger("Unable to resolve " + path);
                 return undefined;
             }
         }
