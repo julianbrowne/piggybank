@@ -76,7 +76,14 @@ function Piggybank(root, options) {
     };
 
     this.makeCallsSynchronously = function() { 
-        // clear all cookies before start
+        piggy.cookieClear();
+        var m = this.builder(0, $.Deferred());
+        return m;
+    };
+
+    this.cookieClear = function() {
+        if($.removeCookie === undefined)
+            throw "cookie lib jquery.cookie.js missing";
         var cookies = document.cookie.split(";");
         for (var i=0; i < cookies.length; i++) { 
             var cookie = cookies[i];
@@ -84,8 +91,6 @@ function Piggybank(root, options) {
             var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
             $.removeCookie(name);
         }
-        var m = this.builder(0, $.Deferred());
-        return m;
     };
 
     this.builder = function(index, deferred, lastResult) { 
@@ -186,13 +191,14 @@ function Piggybank(root, options) {
         // Add cookies
 
         if(apiData.data.cookies !== undefined) { 
-            Object.keys(apiData.data.cookies).forEach(
+            if($.cookie === undefined) throw "cookie lib jquery.cookie.js missing";
+            Object.keys(apiData.data.cookies).forEach( 
                 function(c) { 
-                    if(typeof(apiData.data.cookies[c]) === 'object') {
-                        try {
+                    if(typeof(apiData.data.cookies[c]) === 'object') { 
+                        try { 
                             apiData.data.cookies[c] = resolve(piggy.memory, apiData.data.cookies[c].recall);
                         }
-                        catch(e) {
+                        catch(e) { 
                             piggy.logger("Could not resolve " + apiData.data.cookies[c].recall);
                             return;
                         }
