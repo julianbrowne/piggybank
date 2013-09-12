@@ -12,7 +12,7 @@ function Piggybank(root, options) {
     this.root = root;
     this.last = null;
     this.memory = {};
-    this.logger = function(message) { console.log(message) };
+    this.logger = function(message) { };
     this.status = function(status) { };
     this.allDone = false;
 
@@ -50,6 +50,7 @@ function Piggybank(root, options) {
     };
 
     this.makeCalls = function() { 
+        piggy.cookieClear();
         piggy.deferred = $.Deferred();
         this.queue.forEach(function(api) { 
             var call = piggy.ajaxCall(api);
@@ -91,6 +92,7 @@ function Piggybank(root, options) {
             var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
             $.removeCookie(name);
         }
+        piggy.logger("Cleared down " + cookies.length + " cookies");
     };
 
     this.builder = function(index, deferred, lastResult) { 
@@ -118,7 +120,7 @@ function Piggybank(root, options) {
                             piggy.ajaxSuccess();
                             if(piggy.stopOnSurprise === true && apiCallData.data.expectation.response !== undefined) { 
                                 if(jqXHR.status !== apiCallData.data.expectation.response) { 
-                                    piggy.logger("* Response unexpected");
+                                    piggy.logger("* Response unexpected (" + jqXHR.status + " vs. " + apiCallData.data.expectation.response + ") for " + apiCallData.data.name);
                                     quitTestCycle(jqXHR, apiCallData.data);
                                 }
                             }
@@ -185,7 +187,17 @@ function Piggybank(root, options) {
         // Add request body
 
         if(apiData.data.body !== undefined) { 
-            config.data = JSON.stringify(apiData.data.body);
+            if(Object.keys(apiData.data.body).length === 1 && apiData.data.body.recall !== undefined) { 
+                piggy.logger("Recalling request body data from " + apiData.data.body.recall);
+                config.data = resolve(piggy.memory, apiData.data.body.recall);
+                if(config.data === undefined)
+                    piggy.logger("* Unable to resolve " + apiData.data.body.recall);
+            }
+            else{
+                piggy.logger("Setting request body data");
+                config.data = JSON.stringify(apiData.data.body);
+            }
+            piggy.logger("Body set to " + config.data);
         }
 
         // Add cookies
@@ -206,6 +218,9 @@ function Piggybank(root, options) {
                     $.cookie(c, apiData.data.cookies[c], { path: '/' });
                 }
             );
+            var cookies = [];
+            document.cookie.split(";").forEach(function(c) { cookies.push(c) });
+            piggy.logger("Set " + document.cookie.split(";").length + " cookies [" + cookies.join(",") + "]");
         }
 
         // Add form encoded header and reformat request body
@@ -231,10 +246,11 @@ function Piggybank(root, options) {
         };
 
         if(apiData.data.name !== undefined) { 
-            piggy.logger(apiData.data.name);
+            //console.log(apiData);
+            piggy.logger("API Name: " + apiData.data.name + " " + (apiData.data.desc === undefined ? "" : apiData.data.desc));
         }
 
-        piggy.logger("Req: " + config.url + " with method " + config.type);
+        piggy.logger("> Req: '" + config.url + "' with method '" + config.type + "'");
 
         if(apiData.data.expectation !== undefined)
             piggy.logger("- Exp: " + apiData.data.expectation.response);
@@ -328,7 +344,15 @@ function Piggybank(root, options) {
         }
 
         if(callData.remember !== undefined) { 
-            piggy.memory[callData.remember] = callData[callData.remember] = result.responseJSON;
+            piggy.logger("Remembering response in " + callData.remember);
+            if(result.responseJSON === undefined)
+                var memory = result.responseText;
+            else
+                var memory = result.responseJSON;
+            //console.log(result);
+            piggy.memory[callData.remember] = memory;
+            callData[callData.remember] = memory;
+            piggy.logger("Memory contains " + piggy.memory[callData.remember]);
         }
 
         piggy.results[apiCallId] = apiResults;
