@@ -104,6 +104,8 @@ To set cookies, use the "cookies" key and make sure to include the [JQuery Cooki
 
     manager.addCall("/user/42", { method: "get", cookies: { cookieName: "cookie_value" }, name: "get user 42 details" });
 
+
+
 #### Session Data
 
 To keep a copy of JSON data returned from a call use "remember"
@@ -115,6 +117,18 @@ If the call succeeds, then the full server response text (JSON) will now contain
     manager.addCall('/users/42', { method: "get", cookies: { my_session_key: { recall: "session.session_key" } }, name: "get user info" });
 
 This HTTP GET to /users/42 will set a cookie called my\_session\_key to the value session\_key within the session object remembered in the previous call.
+
+#### URI Templates
+
+Piggybank will automatically populate URI templated URLs if a uri-template and a source of data (urldata) for the missing template data is passed. e.g.:
+
+    manager.addCall("/user/{userid}", { urldata: { hello: "world", userid: 42 } });
+
+This also works for remembered session data:
+
+    manager.addCall("/user/{userid}", { urldata: { recall: "session" } });
+
+(as long as "session" in this case has a key called "userid").
 
 #### Expectations
 
