@@ -178,13 +178,48 @@ function Piggybank(root, options) {
     this.ajaxCall = function(apiData) { 
 
         var config = { 
-            url: piggy.root + apiData.url,
             type: apiData.data.method,
             headers: {},
             timeout: piggy.timeout
         };
 
-        // Add request body
+        /**
+         *  Interpolate uri-template for URLs of the form "/blah/{this}/{that}"
+         *
+         *  urldata is one of: 
+         *      - object containing matching keys to those described in the template
+         *      - recall object
+        **/
+
+        if(apiData.url.search(/{.*?}/) !== -1) { 
+            if(apiData.data.urldata !== undefined) { 
+                if(UriTemplate === undefined) throw "URI Template used but no lib found";
+                if(typeof(apiData.data.urldata) !== 'object') throw "urldata must be a JS object, got " + typeof(apiData.data.urldata)
+                var template = UriTemplate.parse(apiData.url);
+                if(apiData.data.urldata.recall !== undefined) { 
+                    var urldata = resolve(piggy.memory, apiData.data.urldata.recall);
+                }
+                else { 
+                    var urldata = apiData.data.urldata;
+                }
+                var urlEnding = template.expand(urldata);
+                config.url = piggy.root + urlEnding;
+                apiData.url = urlEnding;
+                piggy.logger(" Expanded URL " + apiData.url + " to " + config.url);
+                piggy.logger(" Using        " + JSON.stringify(urldata));
+            }
+            else { 
+                config.url = piggy.root + apiData.url;
+                piggy.logger("WARNING: URI Template (" + apiData.url + ") but no urldata");
+            }
+        }
+        else { 
+            config.url = piggy.root + apiData.url;
+        }
+
+        /**
+         *  Add request body
+        **/
 
         if(apiData.data.body !== undefined) { 
             if(Object.keys(apiData.data.body).length === 1 && apiData.data.body.recall !== undefined) { 
@@ -200,7 +235,9 @@ function Piggybank(root, options) {
             piggy.logger("Body set to " + config.data);
         }
 
-        // Add cookies
+        /**
+         *  Add cookies
+        **/
 
         if(apiData.data.cookies !== undefined) { 
             if($.cookie === undefined) throw "cookie lib jquery.cookie.js missing";
@@ -349,10 +386,16 @@ function Piggybank(root, options) {
                 var memory = result.responseText;
             else
                 var memory = result.responseJSON;
-            //console.log(result);
+            try { 
+                if(typeof(memory) === 'string')
+                    memory = JSON.parse(memory);
+            }
+            catch(e) { 
+                piggy.logger("Could not parse response string as JSON Object");
+            }
             piggy.memory[callData.remember] = memory;
             callData[callData.remember] = memory;
-            piggy.logger("Memory contains " + piggy.memory[callData.remember]);
+            piggy.logger("Memory contains " + (JSON.stringify(piggy.memory[callData.remember])));
         }
 
         piggy.results[apiCallId] = apiResults;

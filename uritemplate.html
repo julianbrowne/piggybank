@@ -1,0 +1,32 @@
+<html>
+<head>
+	<title>Bennett Test</title>
+	<script src="jquery.js"></script>
+	<script src="uritemplate.js"></script>
+</head>
+<body>
+	<h1 class="bennett">URI Template Self-Test</h1>
+
+	<div id="results">
+		<pre><code class="prettyprint"></code></pre>
+	</div>
+
+	<script type="text/javascript">
+		$(function(){
+
+			var url = '/users/{id}';
+			var data = { id: 42 };
+
+			var template = UriTemplate.parse(url);
+
+			$("#results pre code").append(
+				  "<p>url:  " + url + "</p>"
+				+ "<p>data: " + (JSON.stringify(data)) + "</p>"
+			);
+
+		    $("#results pre code").append(template.expand(data));
+		});
+	</script>
+
+</body>
+</html>
