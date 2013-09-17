@@ -1,0 +1,135 @@
+<html>
+<head>
+	<title>Piggybank: Self-Test</title>
+	<script src="jquery.js"></script>
+	<script src="jquery.cookie.js"></script>
+	<script src="tv4.js"></script>
+	<script src="piggybank.js"></script>
+</head>
+<body>
+	<h1>Piggybank: Self-Test</h1>
+
+	<div id="results">
+		<pre><code></code></pre>
+	</div>
+
+	<script type="text/javascript">
+
+	$(function(){
+
+		var options = { 
+			timeout: 5000,
+			ignore404: true,
+			ignoreErrors: true
+		};
+
+		var manager = new Piggybank("http://127.0.0.1:9191/api", options);
+
+		manager.logger = function(message) { $("#results").append(message + "</br>"); };
+		manager.status = function(status)  { $("#results").append(status  + "<br/>"); };
+
+		manager.addCall('/login', { 
+			method: "post", 
+			encoding: 'form', 
+			remember: "session", 
+			body: { username: "fred", password: "x" }, 
+			name: "login fred",
+			expectation : {
+				response: 201,
+				latency: 500,
+				schema: { 
+					type: "object",
+					properties: { 
+						"hubIds": { 
+						    "type": "array"
+						},
+						"ApiSession": { 
+						    "type": "string"
+						}
+					},
+					required: [ 
+						"hubIds",
+						"ApiSession"
+					]
+				},
+			}
+		});
+
+		manager.addCall('/users/fred', { 
+			method: "get", 
+			expectation : {
+				response: 200
+			},
+			cookies: {
+				ApiSession: { recall: "session.ApiSession" }
+			}, 
+			name: "get user details"
+		});
+
+		manager.addCall('/users/all/search', {
+			method: "get", 
+			body: { query: "fred" }, 
+			expectation : {
+				response: 200
+			},
+			encoding: 'form', 
+			cookies: { 
+				ApiSession: { recall: "session.ApiSession" }
+			}, 
+			name: "search users"
+		});
+
+		manager.addCall('/passwordreset', {
+			method: "post", 
+			expectation : {
+				response: 201
+			},
+			encoding: 'form', 
+			body: { username: "fred" }, 
+			cookies: {
+				ApiSession: { recall: "session.ApiSession" }
+			}, 
+			name: "password reset"
+		});
+
+		manager.addCall('/passwordreset', { 
+			method: "get", 
+			encoding: 'form', 
+			expectation : {
+				response: 200
+			},
+			body: { code: "1234" }, 
+			cookies: {
+				ApiSession: { recall: "session.ApiSession" }
+			}, 
+			name: "reset check"
+		});
+
+		manager.addCall('/logout', { 
+			method: "post", 
+			body: {
+				recall: "session.ApiSession"
+			},
+			expectation : {
+				response: 200
+			},
+			cookies: {
+				ApiSession: { recall: "session.ApiSession" }
+			}, 
+			name: "logout fred" 
+		});
+
+		// manager.makeCalls().done(publish);
+
+		manager.makeCallsSynchronously().done(publish);
+
+		function publish(data) {
+			$("#results pre code").append(JSON.stringify(data, null, 4));
+			$("#results pre code").append("\n\r\n\r");
+			prettyPrint();
+		};
+	});
+
+	</script>
+</body>
+</html>
