@@ -396,6 +396,7 @@ function Piggybank(root, options) {
             piggy.memory[callData.remember] = memory;
             callData[callData.remember] = memory;
             piggy.logger("Memory contains " + (JSON.stringify(piggy.memory[callData.remember])));
+            //console.log(memory);
         }
 
         piggy.results[apiCallId] = apiResults;
