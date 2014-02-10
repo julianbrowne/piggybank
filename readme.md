@@ -47,6 +47,7 @@ Valid options are:
 *   **ignoreErrors: true | false (default )** ignore all HTTP errors (5xx etc) in sync mode and continue to next API call
 *   **stopOnSurprise: true | false (default )** Where an expect code is set, it's also possible to indicate that subsequent calls should be abandoned if there's a mismatch between expected and actual HTTP response codes. This is useful when, for example, a login call fails and the rest of the calls become irrelevant or where following calls might have unpredictable and destructive effects.
 *   **logger: function (default none)** Piggybank logs useful information to the browser console by default. It's possible to override the default action by passing on a reference to a logging function.
+*   **clientIP: {ipaddress}**: sets X-Forwarded-For in HTTP header to _ipaddress_ to fake the client IP address
 
 ### Example (Async)
 
