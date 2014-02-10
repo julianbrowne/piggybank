@@ -276,6 +276,12 @@ function Piggybank(root, options) {
             }
         }
 
+        // Add client IP to header
+
+        if(apiData.data.clientIP !== undefined) { 
+            config.headers['X-Forwarded-For'] = apiData.data.clientIP;
+        }
+
         apiData.outcome = {
             timer: {
                 start: Date.now()
