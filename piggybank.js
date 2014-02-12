@@ -112,37 +112,49 @@ function Piggybank(root, options) {
         else { 
             deferred.then( 
                 function() { 
-                    piggy.ajaxCall(apiCallData)
-                    .then( 
-                        function(data, textStatus, jqXHR) { 
-                            apiCallData.outcome.timer.end = Date.now();
-                            apiCallData.outcome.timer.latency = apiCallData.outcome.timer.end - apiCallData.outcome.timer.start;
-                            piggy.ajaxSuccess();
-                            if(piggy.stopOnSurprise === true && apiCallData.data.expectation.response !== undefined) { 
-                                if(jqXHR.status !== apiCallData.data.expectation.response) { 
-                                    piggy.logger("* Response unexpected (" + jqXHR.status + " vs. " + apiCallData.data.expectation.response + ") for " + apiCallData.data.name);
-                                    quitTestCycle(jqXHR, apiCallData.data);
-                                }
-                            }
-                            continueTestCycle(jqXHR);
-                        },
-                        function(jqXHR, textStatus, errorThrown) { 
-                            apiCallData.outcome.timer.end = Date.now();
-                            apiCallData.outcome.timer.latency = apiCallData.outcome.timer.end - apiCallData.outcome.timer.start;
-                            piggy.ajaxFailure();
-                            if((jqXHR.status === 404 && piggy.ignore404 === true) || (piggy.ignoreErrors === true)) { 
-                                    continueTestCycle(jqXHR);
-                            }
-                            else { 
-                                quitTestCycle(jqXHR, apiCallData.data);
-                            }
-                        }
-                    )
+                    piggy.ajaxCall(apiCallData).then(processAjaxPass, processAjaxFail);
                 }
             );
             deferred.resolve();
         }
         return piggy.deferred.promise();
+
+        function processAjaxPass(data, textStatus, jqXHR) { 
+            processAjaxPassorFail(data, textStatus, null, jqXHR);
+        };
+
+        function processAjaxFail(jqXHR, textStatus, errorThrown) { 
+            processAjaxPassorFail({}, textStatus, errorThrown, jqXHR);
+        };
+
+        function processAjaxPassorFail(data, textStatus, errorThrown, jqXHR) { 
+
+            apiCallData.outcome.timer.end = Date.now();
+            apiCallData.outcome.timer.latency = apiCallData.outcome.timer.end - apiCallData.outcome.timer.start;
+
+            console.log(jqXHR);
+
+            if(apiCallData.data.expectation.response === undefined) { 
+                piggy.logger("- Continuing calls. No expected response set for " + apiCallData.data.name);
+                continueTestCycle(jqXHR);
+            }
+            else {
+                if(jqXHR.status !== apiCallData.data.expectation.response) { 
+                    piggy.logger("* Received unexpected response for " + apiCallData.data.name);
+                    piggy.logger("* >> Expected " + apiCallData.data.expectation.response);
+                    piggy.logger("* << Received " + jqXHR.status);
+
+                    if(piggy.stopOnSurprise)
+                        quitTestCycle(jqXHR, apiCallData.data);
+                    else
+                        continueTestCycle(jqXHR);
+                }
+                else { 
+                    continueTestCycle(jqXHR);
+                }
+            }
+            
+        };
 
         function quitTestCycle(xhr, callData) { 
             piggy.status(false);
@@ -164,14 +176,6 @@ function Piggybank(root, options) {
                 next.resolve();                          // resolve this test
             }
         };
-
-    };
-
-    this.ajaxSuccess = function() {
-
-    };
-
-    this.ajaxFailure = function() {
 
     };
 
@@ -279,7 +283,8 @@ function Piggybank(root, options) {
         // Add client IP to header
 
         if(apiData.data.clientIP !== undefined) { 
-            config.headers['X-Forwarded-For'] = apiData.data.clientIP;
+            piggy.logger("Using fake IP " + apiData.data.clientIP);
+            config.headers['client-ip'] = apiData.data.clientIP;
         }
 
         apiData.outcome = {
