@@ -1,10 +1,10 @@
 <html>
 <head>
 	<title>Piggybank: Self-Test</title>
-	<script src="jquery.js"></script>
-	<script src="jquery.cookie.js"></script>
-	<script src="tv4.js"></script>
-	<script src="piggybank.js"></script>
+	<script src="../vendor/jquery-3.3.1.min.js"></script>
+	<script src="../vendor/jquery.cookie.js"></script>
+	<script src="../vendor/tv4.js"></script>
+	<script src="../lib/piggybank.js"></script>
 </head>
 <body>
 	<h1>Piggybank: Self-Test</h1>
@@ -23,17 +23,17 @@
 			ignoreErrors: true
 		};
 
-		var manager = new Piggybank("http://127.0.0.1:9191/api", options);
+		var manager = new Piggybank("https://jsonplaceholder.typicode.com", options);
 
 		manager.logger = function(message) { $("#results").append(message + "</br>"); };
 		manager.status = function(status)  { $("#results").append(status  + "<br/>"); };
 
-		manager.addCall('/login', { 
+		manager.addCall('/posts', { 
 			method: "post", 
 			encoding: 'form', 
 			remember: "session", 
 			body: { username: "fred", password: "x" }, 
-			name: "login fred",
+			name: "POST to /posts",
 			expectation : {
 				response: 201,
 				latency: 500,
@@ -55,7 +55,7 @@
 			}
 		});
 
-		manager.addCall('/users/fred', { 
+		manager.addCall('/comments', { 
 			method: "get", 
 			expectation : {
 				response: 200
@@ -63,12 +63,12 @@
 			cookies: {
 				ApiSession: { recall: "session.ApiSession" }
 			}, 
-			name: "get user details"
+			name: "GET /comments"
 		});
 
-		manager.addCall('/users/all/search', {
+		manager.addCall('/posts', {
 			method: "get", 
-			body: { query: "fred" }, 
+			body: { query: "userId=1" }, 
 			expectation : {
 				response: 200
 			},
@@ -76,54 +76,13 @@
 			cookies: { 
 				ApiSession: { recall: "session.ApiSession" }
 			}, 
-			name: "search users"
+			name: "GET posts for userid 1"
 		});
-
-		manager.addCall('/passwordreset', {
-			method: "post", 
-			expectation : {
-				response: 201
-			},
-			encoding: 'form', 
-			body: { username: "fred" }, 
-			cookies: {
-				ApiSession: { recall: "session.ApiSession" }
-			}, 
-			name: "password reset"
-		});
-
-		manager.addCall('/passwordreset', { 
-			method: "get", 
-			encoding: 'form', 
-			expectation : {
-				response: 200
-			},
-			body: { code: "1234" }, 
-			cookies: {
-				ApiSession: { recall: "session.ApiSession" }
-			}, 
-			name: "reset check"
-		});
-
-		manager.addCall('/logout', { 
-			method: "post", 
-			body: {
-				recall: "session.ApiSession"
-			},
-			expectation : {
-				response: 200
-			},
-			cookies: {
-				ApiSession: { recall: "session.ApiSession" }
-			}, 
-			name: "logout fred" 
-		});
-
-		// manager.makeCalls().done(publish);
 
 		manager.makeCallsSynchronously().done(publish);
 
-		function publish(data) {
+		function publish(data) { 
+			return;
 			$("#results pre code").append(JSON.stringify(data, null, 4));
 			$("#results pre code").append("\n\r\n\r");
 			prettyPrint();
