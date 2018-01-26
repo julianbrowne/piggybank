@@ -1,44 +1,50 @@
  
 ## Piggybank
 
-REST API (Ajax HTTP) Call Manager that takes a list of REST api calls and makes them sequentially, in order, collates all the return codes/results, then delivers them all back together as one.
+REST API (Ajax HTTP) Call Manager that takes a list of REST api calls and:
+
+- makes them sequentially  
+- in order  
+- collates all the return codes/results  
+- delivers everything back as one response  
 
 Piggybank can manage both async and sync (wait for last to complete before next one starts) calls.
 
-### Requirements
+### Dependencies
 
-*   JQuery v2.0.3  
-*   [JQuery Cookie](https://github.com/carhartl/jquery-cookie) 1.3.1 is used for cookie management  
+*   JQuery v3.3.1  
+*   [JQuery Cookie](https://github.com/carhartl/jquery-cookie) v1.3.1 for cookie management  
 
 Optionally:   
 *   [tv4 JSON Schema Validator](https://github.com/geraintluff/tv4) 1.0.7 may be used for schema validation   
 *   [URI Template]() 0.3.4 may be used to manage URI-templated URLs
 
-Tested on Chrome V28 but should work in most browsers  
-
 ### Usage 
 
     ...
 
-    <script src="jquery.js"></script>
-    <script src="jquery.cookie.js"></script>    <!-- optional, for cookie management -->
-    <script src="tv4.js"></script>              <!-- optional, for schema validation -->
-    <script src="uirtemplate.js"></script>      <!-- optional, for uri template management -->
-    <script src="piggybank.js"></script>
+    <script src="vendor/jquery-3.3.1.js"></script>
+    <script src="vendor/jquery.cookie.js"></script>    <!-- optional, for cookie management -->
+    <script src="vendor/tv4.js"></script>              <!-- optional, for schema validation -->
+    <script src="vendor/uirtemplate.js"></script>      <!-- optional, for uri template management -->
+
+    <script src="lib/piggybank.js"></script>
 
     ...
 
     <script>
-        var manager = new Piggybank("http://127.0.0.1");
+        var manager = new Piggybank("http://host");
     </script>
 
-Piggybank is instantiated with the root server calls are to be made to. Beware of Same Origin Policy if calling to a host/port combo that's different from the one Piggbank is running on. There's no [JSONP](http://en.wikipedia.org/wiki/JSONP) support in Piggybank yet. Cross domain calls will work through Piggybank/JQuery as long as the remote host is set up to suport [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
+Piggybank is instantiated with the http server the calls are to be made to.
+
+Beware of Same Origin Policy if calling to a host/port combo that's different from the one Piggbank is running on. There's no [JSONP](http://en.wikipedia.org/wiki/JSONP) support in Piggybank yet. Cross domain calls will work through Piggybank/JQuery as long as the remote host is set up to suport [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing).
 
 #### Options
 
 Piggybank takes an optional second argument object containing settings for the API calls to be made. e.g.
 
-        var manager = new Piggybank("http://127.0.0.1", { timeout: 1000 });
+        var manager = new Piggybank("http://host", { timeout: 1000 });
 
 Valid options are:
 
@@ -51,11 +57,13 @@ Valid options are:
 
 ### Example (Async)
 
+    var manager = new Piggybank("http://host");
+
     manager.addCall("/this");                          // "get" by default
     manager.addCall("/that", { method: "post"});       // or "post"
     manager.addCall("/theother", { method: "put" });
 
-    manager.makeCalls().done(resultCallback);
+    manager.makeCalls().done(callack);
 
 Calls will be made asynchronously in the order "/this", then "/that", then "/theother". Piggybank will then collate results from all calls, returing only when all have completed or timed out. Individual calls will return in unpredicatble order depending on how long each one takes. To wait for the last call to finish before making the next one use sync mode.
 
@@ -65,13 +73,13 @@ Piggybank does not use the [deprecated](http://api.jquery.com/jQuery.ajax/#jQuer
 
 The set up is identical to async mode but with a different call to kick start execution:
 
-    var manager = new Piggybank("http://127.0.0.1");
+    var manager = new Piggybank("http://host");
 
     manager.addCall("/this");       
     manager.addCall("/that", { method: "post"});
     manager.addCall("/theother", { method: "put" });
 
-    manager.makeCallsSynchronously().done(result_writer_callback_here);
+    manager.makeCallsSynchronously().done(callack);
 
 ### addCall Arguments
 
@@ -104,8 +112,6 @@ using **encoding: "form"**
 To set cookies, use the "cookies" key and make sure to include the [JQuery Cookie](https://github.com/carhartl/jquery-cookie) library.
 
     manager.addCall("/user/42", { method: "get", cookies: { cookieName: "cookie_value" }, name: "get user 42 details" });
-
-
 
 #### Session Data
 
@@ -147,7 +153,6 @@ If the data object contains a key called "expect" then this will be compared wit
     		response: 204
     	}
     });
-
 
 #### Schema Validation
 
@@ -194,7 +199,7 @@ Latency is expressed in milliseconds
 
 #### Ajax Success/Failure Callbacks
 
-	--- TODOC ---
+	--- TODO ---
 
 ### Results
 
